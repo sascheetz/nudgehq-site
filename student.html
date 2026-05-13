@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>My Assignments</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;1,300&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #faf8f4;
@@ -18,8 +18,8 @@
     --ok: #a08010;
     --chill: #2a7a56;
     --check: #2a7a56;
-    --serif: 'Fraunces', serif;
-    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'DM Sans', sans-serif;
+    --mono: 'Inter', sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -652,11 +652,13 @@ async function init() {
   }
 }
 
-// Update date label
-const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-const now  = new Date();
-document.querySelector('.date-label').textContent =
-  `${days[now.getDay()]} · ${now.toLocaleDateString('en-US',{month:'long',day:'numeric'})}`;
+// Update date label safely
+document.addEventListener('DOMContentLoaded', () => {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const now  = new Date();
+  const el   = document.querySelector('.date-label');
+  if (el) el.textContent = days[now.getDay()] + ' · ' + now.toLocaleDateString('en-US',{month:'long',day:'numeric'});
+});
 
 init();
 </script>
