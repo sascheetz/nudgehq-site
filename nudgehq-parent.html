@@ -242,7 +242,7 @@
     <div class="s-label">Canvas Connection</div>
     <div class="canvas-domain">🏫 lakota.instructure.com <span>● confirmed</span></div>
     <div class="field"><label>Proxy URL</label><input type="text" id="proxy-url" placeholder="https://your-proxy.up.railway.app"></div>
-    <div class="field"><label>Observer API Token</label><input type="password" id="api-token" placeholder="Paste token from Canvas settings…"></div>
+    <div class="field"><label>Student API Token</label><input type="password" id="api-token" placeholder="Paste token from Canvas settings…"></div>
     <div class="field"><label>Student name (for texts)</label><input type="text" id="student-name" placeholder="e.g. Ethan"></div>
     <button class="btn btn-primary" onclick="loadCanvas()">🔄 Load from Canvas API</button>
     <button class="btn btn-secondary" onclick="loadDemo()">Try Demo Data</button>
@@ -497,52 +497,12 @@ window.loadCanvas = async function() {
   if (!token) { showToast('Paste your Canvas API token first.', 'err'); openModal('token-modal'); return; }
   showLoading(true);
   try {
-    // Try multiple endpoints — Canvas observer setups vary by school
-    let sid = null;
-    let studentName = null;
-
-    // Attempt 1: standard observees endpoint
-    const obsRes = await canvasFetch('/api/v1/users/self/observees', token);
-    if (!obsRes.ok && obsRes.status !== 401) {
-      throw new Error('Auth failed (' + obsRes.status + '). Check your token.');
-    }
-    if (obsRes.ok) {
-      const observees = await obsRes.json();
-      if (observees.length) { sid = observees[0].id; studentName = observees[0].name; }
-    }
-
-    // Attempt 2: check if observer linked via profile
-    if (!sid) {
-      const profileRes = await canvasFetch('/api/v1/users/self/profile', token);
-      if (profileRes.ok) {
-        const profile = await profileRes.json();
-        // Look for linked_users or observed_users in profile
-        if (profile.linked_users && profile.linked_users.length) {
-          sid = profile.linked_users[0].id;
-          studentName = profile.linked_users[0].name;
-        }
-      }
-    }
-
-    // Attempt 3: enrollments — observer enrollments list the observed student
-    if (!sid) {
-      const enrollRes = await canvasFetch('/api/v1/users/self/enrollments?type[]=ObserverEnrollment&per_page=10', token);
-      if (enrollRes.ok) {
-        const enrollments = await enrollRes.json();
-        const obs = enrollments.find(e => e.type === 'ObserverEnrollment' && e.associated_user_id);
-        if (obs) { sid = obs.associated_user_id; }
-      }
-    }
-
-    if (!sid) {
-      throw new Error(
-        'Could not find an observed student on this account. ' +
-        'Make sure you are using a Parent Observer token from lakota.instructure.com, ' +
-        'not a student token. If the problem persists, the school may need to enable API access for observer accounts.'
-      );
-    }
-
-    console.log('Found student ID:', sid, studentName || '');
+    // Use student token directly — calls API as the student (self)
+    const profileRes = await canvasFetch('/api/v1/users/self/profile', token);
+    if (!profileRes.ok) throw new Error('Auth failed (' + profileRes.status + '). Check the token.');
+    const profile = await profileRes.json();
+    const sid = 'self';
+    console.log('Loaded as student:', profile.name || profile.login_id || sid);
 
     const [missingRes, upRes] = await Promise.all([
       canvasFetch(`/api/v1/users/${sid}/missing_submissions?filter[]=submittable&per_page=50`, token),
