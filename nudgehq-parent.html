@@ -956,11 +956,6 @@ window.switchTab  = name => { document.querySelectorAll('.tab-btn').forEach(b=>b
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ══════════════════════════════════════
-// QR CODE GENERATOR
-// ══════════════════════════════════════
-};
-
 document.getElementById('empty').style.display='block';
 updateStats();
 
