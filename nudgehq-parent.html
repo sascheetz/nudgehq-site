@@ -959,112 +959,10 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 // ══════════════════════════════════════
 // QR CODE GENERATOR
 // ══════════════════════════════════════
-window.showQR = function(type) {
-  const proxyUrl  = document.getElementById('proxy-url').value.trim()   || localStorage.getItem('nhq_cred_proxy-url')  || '';
-  const token     = document.getElementById('api-token').value.trim()   || localStorage.getItem('nhq_cred_api-token')  || '';
-  const fbUrl     = document.getElementById('fb-url').value.trim()      || localStorage.getItem('nhq_cred_fb-url')     || '';
-  const fbKey     = document.getElementById('fb-key').value.trim()      || localStorage.getItem('nhq_cred_fb-key')     || '';
-  const twSid     = document.getElementById('tw-sid').value.trim()      || localStorage.getItem('nhq_cred_tw-sid')     || '';
-  const twToken   = document.getElementById('tw-token').value.trim()    || localStorage.getItem('nhq_cred_tw-token')   || '';
-  const twFrom    = document.getElementById('tw-from').value.trim()     || localStorage.getItem('nhq_cred_tw-from')    || '';
-  const twTo      = document.getElementById('tw-to').value.trim()       || localStorage.getItem('nhq_cred_tw-to')      || '';
-  const studName  = document.getElementById('student-name').value.trim()|| localStorage.getItem('nhq_cred_student-name')|| '';
-
-  const baseUrl = type === 'parent'
-    ? 'https://sascheetz.github.io/nudgehq-site/nudgehq-parent.html'
-    : 'https://sascheetz.github.io/nudgehq-site/student.html';
-
-  // Build params based on type
-  const params = new URLSearchParams();
-  if (type === 'parent') {
-    if (proxyUrl)  params.set('proxy',   proxyUrl);
-    if (token)     params.set('token',   token);
-    if (fbUrl)     params.set('fbUrl',   fbUrl);
-    if (fbKey)     params.set('fbKey',   fbKey);
-    if (twSid)     params.set('twSid',   twSid);
-    if (twToken)   params.set('twToken', twToken);
-    if (twFrom)    params.set('twFrom',  twFrom);
-    if (twTo)      params.set('twTo',    twTo);
-    if (studName)  params.set('name',    studName);
-  } else {
-    // Student only needs token + Firebase
-    if (token)   params.set('token', token);
-    if (fbUrl)   params.set('fbUrl', fbUrl);
-    if (fbKey)   params.set('fbKey', fbKey);
-  }
-
-  const fullUrl = baseUrl + '?' + params.toString();
-
-  // Check URL isn't too long for a QR code (~2000 chars is safe)
-  if (fullUrl.length > 2000) {
-    showToast('Too much data for a QR code — try after saving credentials.', 'err');
-    return;
-  }
-
-  // Update modal
-  const title = type === 'parent' ? '📱 Your Phone Setup' : '📱 His Phone Setup';
-  const desc  = type === 'parent'
-    ? 'Scan with your phone camera to open the parent dashboard with all settings pre-filled.'
-    : 'Have him scan this to open his checklist with his Canvas token and Firebase pre-filled.';
-  const instructions = type === 'parent'
-    ? '1. Open your phone camera
-2. Point at the QR code
-3. Tap the link that appears
-4. Bookmark it on your phone'
-    : '1. Open his phone camera
-2. Point at the QR code
-3. Tap the link — settings fill automatically
-4. He taps Save & Load';
-
-  document.getElementById('qr-title').textContent = title;
-  document.getElementById('qr-desc').textContent  = desc;
-  document.getElementById('qr-instructions').style.whiteSpace = 'pre-line';
-  document.getElementById('qr-instructions').textContent = instructions;
-
-  // Clear and regenerate QR code
-  const qrDiv = document.getElementById('qr-code');
-  qrDiv.innerHTML = '';
-  new QRCode(qrDiv, {
-    text:         fullUrl,
-    width:        220,
-    height:       220,
-    colorDark:    '#1c1814',
-    colorLight:   '#fdfaf4',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
-
-  openModal('qr-modal');
 };
 
 document.getElementById('empty').style.display='block';
 updateStats();
-
-// ══════════════════════════════════════
-// AUTO-FILL FROM QR CODE URL PARAMS
-// ══════════════════════════════════════
-(function readQRParams() {
-  const p = new URLSearchParams(window.location.search);
-  const map = {
-    proxy:   'nhq_cred_proxy-url',
-    token:   'nhq_cred_api-token',
-    fbUrl:   'nhq_cred_fb-url',
-    fbKey:   'nhq_cred_fb-key',
-    twSid:   'nhq_cred_tw-sid',
-    twToken: 'nhq_cred_tw-token',
-    twFrom:  'nhq_cred_tw-from',
-    twTo:    'nhq_cred_tw-to',
-    name:    'nhq_cred_student-name',
-  };
-  let found = false;
-  Object.entries(map).forEach(([param, storageKey]) => {
-    const val = p.get(param);
-    if (val) { localStorage.setItem(storageKey, val); found = true; }
-  });
-  // Clean URL after reading params so token isn't visible in address bar
-  if (found && window.history.replaceState) {
-    window.history.replaceState({}, '', window.location.pathname);
-  }
-})();
 
 // ══════════════════════════════════════
 // PERSIST CREDENTIALS IN LOCALSTORAGE
@@ -1115,6 +1013,100 @@ window.addEventListener('load', () => {
     setTimeout(() => window.loadCanvas && window.loadCanvas(), 600);
   }
 });
+</script>
+<script>
+
+</script>
+<script>
+// ══════════════════════════════════════
+// AUTO-FILL FROM QR CODE URL PARAMS
+// ══════════════════════════════════════
+(function readQRParams() {
+  const p = new URLSearchParams(window.location.search);
+  const map = {
+    proxy:   'nhq_cred_proxy-url',
+    token:   'nhq_cred_api-token',
+    fbUrl:   'nhq_cred_fb-url',
+    fbKey:   'nhq_cred_fb-key',
+    twSid:   'nhq_cred_tw-sid',
+    twToken: 'nhq_cred_tw-token',
+    twFrom:  'nhq_cred_tw-from',
+    twTo:    'nhq_cred_tw-to',
+    name:    'nhq_cred_student-name',
+  };
+  let found = false;
+  Object.entries(map).forEach(([param, storageKey]) => {
+    const val = p.get(param);
+    if (val) { localStorage.setItem(storageKey, val); found = true; }
+  });
+  if (found && window.history.replaceState) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
+window.showQR = function(type) {
+  const proxyUrl  = localStorage.getItem('nhq_cred_proxy-url')   || '';
+  const token     = localStorage.getItem('nhq_cred_api-token')   || '';
+  const fbUrl     = localStorage.getItem('nhq_cred_fb-url')      || '';
+  const fbKey     = localStorage.getItem('nhq_cred_fb-key')      || '';
+  const twSid     = localStorage.getItem('nhq_cred_tw-sid')      || '';
+  const twToken   = localStorage.getItem('nhq_cred_tw-token')    || '';
+  const twFrom    = localStorage.getItem('nhq_cred_tw-from')     || '';
+  const twTo      = localStorage.getItem('nhq_cred_tw-to')       || '';
+  const studName  = localStorage.getItem('nhq_cred_student-name')|| '';
+
+  const baseUrl = type === 'parent'
+    ? 'https://sascheetz.github.io/nudgehq-site/nudgehq-parent.html'
+    : 'https://sascheetz.github.io/nudgehq-site/student.html';
+
+  const params = new URLSearchParams();
+  if (type === 'parent') {
+    if (proxyUrl) params.set('proxy',   proxyUrl);
+    if (token)    params.set('token',   token);
+    if (fbUrl)    params.set('fbUrl',   fbUrl);
+    if (fbKey)    params.set('fbKey',   fbKey);
+    if (twSid)    params.set('twSid',   twSid);
+    if (twToken)  params.set('twToken', twToken);
+    if (twFrom)   params.set('twFrom',  twFrom);
+    if (twTo)     params.set('twTo',    twTo);
+    if (studName) params.set('name',    studName);
+  } else {
+    if (token) params.set('token', token);
+    if (fbUrl) params.set('fbUrl', fbUrl);
+    if (fbKey) params.set('fbKey', fbKey);
+  }
+
+  const fullUrl = baseUrl + '?' + params.toString();
+  if (fullUrl.length > 2500) {
+    alert('Too much data for a QR code. Make sure all credentials are saved first.');
+    return;
+  }
+
+  const title = type === 'parent' ? '📱 Your Phone Setup' : '📱 His Phone Setup';
+  const desc  = type === 'parent'
+    ? 'Scan with your phone camera to open the parent dashboard with all settings pre-filled.'
+    : 'Have him scan this to open his checklist with his Canvas token and Firebase pre-filled.';
+  const instructions = type === 'parent'
+    ? '1. Open your phone camera\n2. Point at the QR code\n3. Tap the link\n4. Bookmark the page'
+    : '1. Open his phone camera\n2. Point at the QR code\n3. Tap the link — settings auto-fill\n4. He bookmarks it';
+
+  document.getElementById('qr-title').textContent = title;
+  document.getElementById('qr-desc').textContent  = desc;
+  document.getElementById('qr-instructions').style.whiteSpace = 'pre-line';
+  document.getElementById('qr-instructions').textContent = instructions;
+
+  const qrDiv = document.getElementById('qr-code');
+  qrDiv.innerHTML = '';
+  new QRCode(qrDiv, {
+    text:         fullUrl,
+    width:        220,
+    height:       220,
+    colorDark:    '#1c1814',
+    colorLight:   '#fdfaf4',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+
+  document.getElementById('qr-modal').classList.add('open');
+};
 </script>
 </body>
 </html>
