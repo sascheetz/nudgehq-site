@@ -179,6 +179,19 @@
   .done-btn:hover { border-color: var(--chill); color: var(--chill); background: #eef7f3; }
   .done-btn.db-checked { background: #eef7f3; color: var(--chill); border-color: #b0d8c8; }
 
+  .date-header {
+    grid-column: 1 / -1;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--subink);
+    padding: 16px 2px 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2px;
+  }
+  .date-header:first-child { padding-top: 0; }
+
   #empty { display:none; grid-column:1/-1; text-align:center; padding:80px 20px; color:var(--muted); }
   #empty .big { font-family:var(--serif); font-style:italic; font-size:2.8rem; margin-bottom:10px; }
   #empty p { font-size:0.65rem; line-height:1.75; }
@@ -563,7 +576,14 @@ window.loadCanvas = async function() {
     });
 
     await enrichCourseNames(sid, token);
-    assignments.sort((a,b) => { if(a.status==='missing'&&b.status!=='missing')return -1; if(b.status==='missing'&&a.status!=='missing')return 1; return (a.due||new Date(9e15))-(b.due||new Date(9e15)); });
+    // Sort: missing first, then by due date ascending
+    assignments.sort((a, b) => {
+      if (a.status==='missing' && b.status!=='missing') return -1;
+      if (b.status==='missing' && a.status!=='missing') return 1;
+      const aDate = a.due || new Date(9e15);
+      const bDate = b.due || new Date(9e15);
+      return aDate - bDate;
+    });
 
     document.getElementById('last-sync').textContent = `Synced · ${fmtTime(new Date())}`;
     renderAll();
@@ -640,6 +660,21 @@ function fmtTime(d) { return d.toLocaleTimeString('en-US',{hour:'numeric',minute
 // ══════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════
+function getDateLabel(a) {
+  if (a.status === 'missing') return '⚠️ Missing';
+  if (!a.due) return 'No due date';
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  const diff  = Math.round((due - today) / 86400000);
+  if (diff < 0)  return '⚠️ Overdue';
+  if (diff === 0) return '📅 Today';
+  if (diff === 1) return '📅 Tomorrow';
+  if (diff <= 6)  return '📅 This Week — ' + a.due.toLocaleDateString('en-US', {weekday:'long'});
+  // Group by week after that
+  return '📅 ' + a.due.toLocaleDateString('en-US', {month:'long', day:'numeric'});
+}
+
 function renderAll() { renderBanners(); renderCards(); updateStats(); }
 
 function renderBanners() {
@@ -666,7 +701,7 @@ function renderBanners() {
 
 function renderCards() {
   const grid = document.getElementById('grid');
-  grid.querySelectorAll('.card').forEach(c=>c.remove());
+  grid.querySelectorAll('.card, .date-header').forEach(c=>c.remove());
   document.getElementById('empty').style.display = 'none';
 
   const list = assignments.filter(a => {
@@ -682,7 +717,17 @@ function renderCards() {
 
   if (!list.length) { document.getElementById('empty').style.display='block'; return; }
 
+  // Group by date label
+  let lastDateLabel = null;
   list.forEach((a,idx) => {
+    const dateLabel = getDateLabel(a);
+    if (dateLabel !== lastDateLabel) {
+      const header = document.createElement('div');
+      header.className = 'date-header';
+      header.textContent = dateLabel;
+      grid.appendChild(header);
+      lastDateLabel = dateLabel;
+    }
     const u      = urgency(a);
     const pDone  = parentDone[a.id];
     const sDone  = studentChecked[a.id]===true;
@@ -717,8 +762,8 @@ function renderCards() {
         </button>
       </div>`;
     grid.appendChild(card);
-  });
-}
+  }); // end list.forEach
+} // end renderCards
 
 window.setFilter = function(f,el) {
   activeFilter = f;
