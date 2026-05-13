@@ -677,6 +677,34 @@ function showToast(msg) {
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ══════════════════════════════════════
+// AUTO-FILL FROM QR CODE URL PARAMS
+// ══════════════════════════════════════
+(function readQRParams() {
+  const p = new URLSearchParams(window.location.search);
+  const map = {
+    token: 'nhq_student_token',
+    fbUrl: 'nhq_student_fbUrl',
+    fbKey: 'nhq_student_fbKey',
+  };
+  let found = false;
+  Object.entries(map).forEach(([param, storageKey]) => {
+    const val = p.get(param);
+    if (val) { localStorage.setItem(storageKey, val); found = true; }
+  });
+  if (found) {
+    // Rebuild cfg from newly saved values
+    cfg.token = localStorage.getItem('nhq_student_token') || '';
+    cfg.fbUrl = localStorage.getItem('nhq_student_fbUrl') || '';
+    cfg.fbKey = localStorage.getItem('nhq_student_fbKey') || '';
+    localStorage.setItem('nhq_student_cfg', JSON.stringify(cfg));
+    // Clean URL so token isn't visible
+    if (window.history.replaceState) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }
+})();
+
+// ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
 async function init() {
