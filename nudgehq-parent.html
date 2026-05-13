@@ -129,6 +129,7 @@
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
+  .card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
   .card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
   .card.c-student-done { border-color: #f0d090; background: #fffbf0; }
   .card.c-parent-done  { opacity: 0.38; }
@@ -140,7 +141,8 @@
   .c-course { font-size: 0.55rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
 
   .pill { font-size: 0.52rem; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.07em; }
-  .p-missing { background: rgba(198,120,221,0.15); color: var(--missing); border: 1px solid rgba(198,120,221,0.35); }
+  .p-zeroed  { background: #fdf0ee; color: var(--fire);    border: 1px solid #f5c5bf; }
+  .p-missing { background: #f9f0fb; color: var(--missing); border: 1px solid #d9aee8; }
   .p-fire    { background: rgba(255,92,92,0.12);   color: var(--fire);    border: 1px solid rgba(255,92,92,0.3); }
   .p-soon    { background: rgba(255,144,64,0.12);  color: var(--soon);    border: 1px solid rgba(255,144,64,0.3); }
   .p-ok      { background: rgba(245,200,66,0.12);  color: var(--ok);      border: 1px solid rgba(245,200,66,0.3); }
@@ -517,10 +519,11 @@ window.loadCanvas = async function() {
     const sid = 'self';
     console.log('Loaded as student:', profile.name || profile.login_id || sid);
 
-    const [missingRes, upRes, plannerRes] = await Promise.all([
+    const [missingRes, upRes, plannerRes, coursesForZeroRes] = await Promise.all([
       canvasFetch('/api/v1/users/self/missing_submissions?filter[]=submittable&per_page=50', token),
       canvasFetch('/api/v1/users/self/upcoming_events?per_page=50', token),
       canvasFetch('/api/v1/planner/items?per_page=50&filter=new_activity', token),
+      canvasFetch('/api/v1/users/self/courses?enrollment_state=active&per_page=50', token),
     ]);
 
     const missingRaw = missingRes.ok ? await missingRes.json() : [];
@@ -577,9 +580,51 @@ window.loadCanvas = async function() {
 
     await enrichCourseNames(sid, token);
     // Sort: missing first, then by due date ascending
+    // ── Zero detection: graded assignments with score=0 and no submission ──
+    if (coursesForZeroRes.ok) {
+      try {
+        const activeCourses = await coursesForZeroRes.json();
+        const zeroChecks = activeCourses.map(c =>
+          canvasFetch(
+            '/api/v1/courses/' + c.id +
+            '/students/submissions?student_ids[]=self&workflow_state=graded&per_page=50', token
+          )
+        );
+        const zeroResults = await Promise.all(zeroChecks);
+        for (let i = 0; i < zeroResults.length; i++) {
+          if (!zeroResults[i].ok) continue;
+          const subs = await zeroResults[i].json();
+          subs.forEach(sub => {
+            // Flag if: score is 0, never submitted, graded by a real person
+            const isZero        = sub.score === 0 || sub.score === null;
+            const neverSubmitted = !sub.submitted_at;
+            const wasGraded     = sub.grader_id && sub.grader_id > 0;
+            const alreadyListed = seen.has(String(sub.assignment_id));
+            if (isZero && neverSubmitted && wasGraded && !alreadyListed) {
+              seen.add(String(sub.assignment_id));
+              assignments.push({
+                id:      String(sub.assignment_id),
+                title:   sub.assignment ? sub.assignment.name : 'Assignment #' + sub.assignment_id,
+                course:  'Course ' + activeCourses[i].id,
+                due:     sub.assignment && sub.assignment.due_at ? new Date(sub.assignment.due_at) : null,
+                status:  'zeroed',
+                score:   sub.score,
+                grade:   sub.grade,
+                points:  sub.assignment ? sub.assignment.points_possible : null,
+                source:  'api',
+              });
+            }
+          });
+        }
+      } catch(e) { console.warn('Zero detection error:', e.message); }
+    }
+
     assignments.sort((a, b) => {
-      if (a.status==='missing' && b.status!=='missing') return -1;
-      if (b.status==='missing' && a.status!=='missing') return 1;
+      // Sort order: zeroed → missing → upcoming by date
+      const order = { zeroed: 0, missing: 1, upcoming: 2 };
+      const ao = order[a.status] ?? 2;
+      const bo = order[b.status] ?? 2;
+      if (ao !== bo) return ao - bo;
       const aDate = a.due || new Date(9e15);
       const bDate = b.due || new Date(9e15);
       return aDate - bDate;
@@ -633,6 +678,7 @@ window.loadDemo = function() {
 // URGENCY
 // ══════════════════════════════════════
 function urgency(a) {
+  if (a.status==='zeroed')  return 'zeroed';
   if (a.status==='missing') return 'missing';
   if (!a.due) return 'chill';
   const h = (a.due-new Date())/3600000;
@@ -680,15 +726,22 @@ function renderAll() { renderBanners(); renderCards(); updateStats(); }
 function renderBanners() {
   // Missing
   // Exclude anything parent or student has already marked done
+  // Include both truly missing AND zeroed (graded as 0, never submitted)
   const missing = assignments.filter(a =>
-    a.status === 'missing' &&
+    (a.status === 'missing' || a.status === 'zeroed') &&
     !parentDone[a.id] &&
     studentChecked[a.id] !== true
   );
   const mb = document.getElementById('missing-banner');
   if (missing.length) {
     mb.classList.add('on');
-    document.getElementById('mb-title').textContent = '⚠️ ' + missing.length + ' assignment' + (missing.length>1?'s are':' is') + ' officially missing in Canvas';
+    const zeroedCount  = missing.filter(a=>a.status==='zeroed').length;
+    const missingCount = missing.filter(a=>a.status==='missing').length;
+    let bannerTitle = '⚠️ ';
+    if (zeroedCount && missingCount) bannerTitle += zeroedCount + ' graded zero' + (zeroedCount>1?'s':'') + ', ' + missingCount + ' missing';
+    else if (zeroedCount) bannerTitle += zeroedCount + ' assignment' + (zeroedCount>1?'s':'') + ' graded as zero';
+    else bannerTitle += missingCount + ' assignment' + (missingCount>1?'s are':' is') + ' officially missing';
+    document.getElementById('mb-title').textContent = bannerTitle;
     document.getElementById('mb-sub').textContent   = missing.map(a=>'"'+a.title+'"').join(' · ');
     document.getElementById('mb-btn').disabled = false;
     document.getElementById('mb-btn').textContent = '📲 Text all missing';
@@ -738,11 +791,12 @@ function renderCards() {
     const sDone  = studentChecked[a.id]===true;
     const isMiss = a.status==='missing';
 
-    const pillLabel = { missing:'⚠️ Missing', fire:'🔴 Due Today', soon:'🟠 This Week', ok:'🟡 Coming Up', chill:'🟢 Later' }[pDone?'done':u] || '';
-    const pillCls   = { missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
+    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon:'🟠 This Week', ok:'🟡 Coming Up', chill:'🟢 Later' }[pDone?'done':u] || '';
+    const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
-    card.className = `card${isMiss?' c-missing':''}${sDone&&!pDone?' c-student-done':''}${pDone?' c-parent-done':''}`;
+    const isZeroed = a.status === 'zeroed';
+    card.className = `card${isZeroed?' c-zeroed':''}${isMiss?' c-missing':''}${sDone&&!pDone?' c-student-done':''}${pDone?' c-parent-done':''}`;
     card.style.animationDelay = `${idx*30}ms`;
     card.innerHTML = `
       <div class="c-top">
@@ -753,7 +807,7 @@ function renderCards() {
       <div class="c-meta">
         <span>${fmtDate(a.due)}</span>
         <span class="c-countdown cd-${u}">${countdown(a)}</span>
-        ${a.points?`<span style="font-size:0.56rem;color:var(--muted)">${a.points} pts possible</span>`:''}
+        ${a.status==='zeroed'?`<span style="font-size:0.63rem;font-weight:600;color:var(--fire)">Graded: ${a.grade||'0'} / ${a.points||0} pts — never submitted</span>`:a.points?`<span style="font-size:0.56rem;color:var(--muted)">${a.points} pts possible</span>`:''}
         ${sDone?`<span class="student-checked-badge">✅ He marked this done</span>`:''}
         <span class="source-badge sb-api">● Live from Canvas API</span>
       </div>
@@ -800,10 +854,11 @@ window.toggleParentDone = async function(id) {
 };
 
 function updateStats() {
-  const missing  = assignments.filter(a=>a.status==='missing');
-  const fire     = assignments.filter(a=>urgency(a)==='fire'&&a.status!=='missing'&&!parentDone[a.id]);
+  const zeroed   = assignments.filter(a=>a.status==='zeroed'&&!parentDone[a.id]);
+  const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]&&studentChecked[a.id]!==true);
+  const fire     = assignments.filter(a=>urgency(a)==='fire'&&a.status!=='missing'&&a.status!=='zeroed'&&!parentDone[a.id]);
   const checked  = Object.values(studentChecked).filter(Boolean).length;
-  document.getElementById('s-missing').textContent = missing.length||'0';
+  document.getElementById('s-missing').textContent = (zeroed.length + missing.length)||'0';
   document.getElementById('s-fire').textContent    = fire.length||'0';
   document.getElementById('s-checked').textContent = checked||'0';
   document.getElementById('s-nudged').textContent  = nudgeCount;
