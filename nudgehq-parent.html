@@ -586,22 +586,38 @@ window.loadCanvas = async function() {
     assignments      = [];
 
     missingRaw.forEach(a => {
-      seen.add(String(a.id));
-      assignments.push({ id:String(a.id), title:a.name||'Untitled', course:`Course ${a.course_id}`, due:a.due_at?new Date(a.due_at):null, status:'missing', points:a.points_possible||null, source:'api' });
+      const id = String(a.id);
+      if (seen.has(id)) return; // skip duplicates
+      seen.add(id);
+      assignments.push({
+        id, title: a.name||'Untitled',
+        course: 'Course ' + a.course_id,
+        due:    a.due_at ? new Date(a.due_at) : null,
+        status: 'missing',
+        points: a.points_possible || null,
+        source: 'api',
+      });
     });
     // Only show assignments due after Aug 1 of current academic year (filters last year)
     const now2 = new Date();
     const academicYearStart = new Date(now2.getMonth() >= 7
       ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1); // Aug 1
     upRaw.forEach(a => {
-      if (seen.has(String(a.id))) return;
+      const id = String(a.id);
+      if (seen.has(id)) return; // skip duplicates and already-missing items
       const due = a.due_at ? new Date(a.due_at) : null;
-      if (!due || due < academicYearStart) return; // skip last year's assignments
-      assignments.push({ id:String(a.id), title:a.name||'Untitled', course:`Course ${a.course_id}`, due, status:'upcoming', points:a.points_possible||null, source:'api' });
+      if (!due || due < academicYearStart) return;
+      seen.add(id);
+      assignments.push({
+        id, title: a.name||'Untitled',
+        course: 'Course ' + (a.course_id || ''),
+        due,
+        status: 'upcoming',
+        points: a.points_possible || null,
+        source: 'api',
+      });
     });
 
-    await enrichCourseNames(sid, token);
-    // Sort: missing first, then by due date ascending
     // ── Zero detection: graded assignments with score=0 and no submission ──
     if (coursesForZeroRes.ok) {
       try {
@@ -622,7 +638,7 @@ window.loadCanvas = async function() {
             const neverSubmitted = !sub.submitted_at;
             const wasGraded     = sub.grader_id && sub.grader_id > 0;
             const alreadyListed = seen.has(String(sub.assignment_id));
-            if (isZero && neverSubmitted && wasGraded && !alreadyListed) {
+            if (isZero && neverSubmitted && wasGraded && !alreadyListed && !seen.has(String(sub.assignment_id))) {
               const zeroTitle = (sub.assignment && (sub.assignment.name || sub.assignment.title))
                 ? (sub.assignment.name || sub.assignment.title)
                 : null;
@@ -644,6 +660,9 @@ window.loadCanvas = async function() {
         }
       } catch(e) { console.warn('Zero detection error:', e.message); }
     }
+
+    // Enrich course names for all assignments
+    await enrichCourseNames(token);
 
     assignments.sort((a, b) => {
       // Sort order: zeroed → missing → upcoming by date
@@ -669,15 +688,28 @@ async function canvasFetch(path, token) {
   return fetch(proxyBase + path, { headers: { 'Authorization': 'Bearer ' + token } });
 }
 
-async function enrichCourseNames(sid, token) {
+async function enrichCourseNames(token) {
   try {
-    const res = await canvasFetch('/api/v1/users/self/courses?per_page=50', token);
-    if (!res.ok) return;
+    const res = await canvasFetch('/api/v1/users/self/courses?enrollment_state=active&per_page=50', token);
+    if (!res.ok) { console.warn('Courses API returned:', res.status); return; }
     const courses = await res.json();
+    console.log('Courses returned:', courses.length, courses.map(c => c.id + ':' + c.name));
     const map = {};
-    courses.forEach(c => { map[String(c.id)] = c.name || c.course_code || `Course ${c.id}`; });
-    assignments.forEach(a => { const cid=a.course.replace('Course ',''); if(map[cid]) a.course=map[cid]; });
-  } catch(e) {}
+    courses.forEach(c => {
+      map[String(c.id)] = c.name || c.course_code || ('Course ' + c.id);
+    });
+    console.log('Course map:', map);
+    console.log('Assignment courses before enrich:', assignments.map(a => a.course));
+    assignments.forEach(a => {
+      const cid = String(a.course).replace(/^Course\s+/i, '').trim();
+      if (map[cid]) {
+        a.course = map[cid];
+      } else {
+        console.warn('No match for course ID:', cid, '— available IDs:', Object.keys(map));
+      }
+    });
+    console.log('Assignment courses after enrich:', assignments.map(a => a.course));
+  } catch(e) { console.warn('Course name enrichment failed:', e.message); }
 }
 
 // ══════════════════════════════════════
@@ -714,17 +746,24 @@ function urgency(a) {
   return 'chill';
 }
 function countdown(a) {
+  if (a.status==='zeroed')  return 'Graded as zero — never submitted';
   if (a.status==='missing') {
     if (!a.due) return 'Officially missing in Canvas';
-    const h = Math.abs(Math.floor((a.due-new Date())/3600000));
-    return `${h<24?h+'h':Math.floor(h/24)+'d'} overdue · marked missing`;
+    const h = Math.abs(Math.floor((a.due - new Date()) / 3600000));
+    const overdue = h < 24 ? h + 'h overdue' : Math.floor(h/24) + 'd overdue';
+    return overdue + ' · officially missing';
   }
   if (!a.due) return 'No due date';
-  const h = Math.floor((a.due-new Date())/3600000);
-  if (h<1)  return 'Due in under an hour';
-  if (h<24) return `Due in ${h}h`;
-  const d=Math.floor(h/24),rh=h%24;
-  return rh>0?`${d}d ${rh}h away`:`${d} day${d>1?'s':''} away`;
+  const diff = a.due - new Date();
+  if (diff < 0) {
+    const h = Math.abs(Math.floor(diff / 3600000));
+    return h < 24 ? h + 'h overdue' : Math.floor(h/24) + 'd overdue';
+  }
+  const h = Math.floor(diff / 3600000);
+  if (h < 1)  return 'Due in under an hour';
+  if (h < 24) return 'Due in ' + h + 'h';
+  const d = Math.floor(h/24), rh = h%24;
+  return rh > 0 ? d + 'd ' + rh + 'h away' : d + ' day' + (d>1?'s':'') + ' away';
 }
 function fmtDate(d) { return d?d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'No due date'; }
 function fmtTime(d) { return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
