@@ -679,12 +679,17 @@ function renderAll() { renderBanners(); renderCards(); updateStats(); }
 
 function renderBanners() {
   // Missing
-  const missing = assignments.filter(a=>a.status==='missing');
+  // Exclude anything parent or student has already marked done
+  const missing = assignments.filter(a =>
+    a.status === 'missing' &&
+    !parentDone[a.id] &&
+    studentChecked[a.id] !== true
+  );
   const mb = document.getElementById('missing-banner');
   if (missing.length) {
     mb.classList.add('on');
-    document.getElementById('mb-title').textContent = `⚠️ ${missing.length} assignment${missing.length>1?'s are':' is'} officially missing in Canvas`;
-    document.getElementById('mb-sub').textContent   = missing.map(a=>`"${a.title}"`).join(' · ');
+    document.getElementById('mb-title').textContent = '⚠️ ' + missing.length + ' assignment' + (missing.length>1?'s are':' is') + ' officially missing in Canvas';
+    document.getElementById('mb-sub').textContent   = missing.map(a=>'"'+a.title+'"').join(' · ');
     document.getElementById('mb-btn').disabled = false;
     document.getElementById('mb-btn').textContent = '📲 Text all missing';
   } else { mb.classList.remove('on'); }

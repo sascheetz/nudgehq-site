@@ -549,15 +549,17 @@ function urgency(due) {
 }
 
 function dueLabel(due) {
-  const h = (due - new Date()) / 3600000;
-  if (h < -0.5) {
-    const d = Math.floor(Math.abs(h)/24);
-    return d > 0 ? `${d}d overdue` : 'overdue';
-  }
-  if (h < 1)  return 'due < 1h';
-  if (h < 24) return `due in ${Math.floor(h)}h`;
-  const d = Math.floor(h/24);
-  return d === 1 ? 'due tomorrow' : `due in ${d}d`;
+  if (!due) return 'No due date';
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const diff  = Math.round((dueDay - today) / 86400000);
+  const dateStr = due.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  const timeStr = due.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  if (diff < 0)   return dateStr + ' · ' + timeStr + ' — overdue';
+  if (diff === 0) return 'Today · ' + timeStr;
+  if (diff === 1) return 'Tomorrow · ' + timeStr;
+  return dateStr + ' · ' + timeStr;
 }
 
 // ══════════════════════════════════════
