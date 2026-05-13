@@ -536,14 +536,17 @@ window.loadCanvas = async function() {
         .filter(e => e.type === 'Assignment' || e.assignment)
         .map(e => {
           const a = e.assignment || e;
+          const title = a.name || a.title || e.title || e.description || null;
+          // Skip if we only have a numeric-looking title (assignment ID leaked through)
+          if (!title || /^\d+$/.test(String(title))) return null;
           return {
             id:               a.id || e.id,
-            name:             a.name || a.title || e.title || 'Untitled',
+            name:             title,
             course_id:        a.course_id || e.course_id || null,
             due_at:           a.due_at || e.start_at || null,
             points_possible:  a.points_possible || null,
           };
-        });
+        }).filter(Boolean);
     }
 
     // Also pull from planner as a fallback/supplement
@@ -587,7 +590,7 @@ window.loadCanvas = async function() {
         const zeroChecks = activeCourses.map(c =>
           canvasFetch(
             '/api/v1/courses/' + c.id +
-            '/students/submissions?student_ids[]=self&workflow_state=graded&per_page=50', token
+            '/students/submissions?student_ids[]=self&workflow_state=graded&per_page=50&include[]=assignment', token
           )
         );
         const zeroResults = await Promise.all(zeroChecks);
@@ -601,10 +604,14 @@ window.loadCanvas = async function() {
             const wasGraded     = sub.grader_id && sub.grader_id > 0;
             const alreadyListed = seen.has(String(sub.assignment_id));
             if (isZero && neverSubmitted && wasGraded && !alreadyListed) {
+              const zeroTitle = (sub.assignment && (sub.assignment.name || sub.assignment.title))
+                ? (sub.assignment.name || sub.assignment.title)
+                : null;
+              if (!zeroTitle) return; // skip if we can't get the name
               seen.add(String(sub.assignment_id));
               assignments.push({
                 id:      String(sub.assignment_id),
-                title:   sub.assignment ? sub.assignment.name : 'Assignment #' + sub.assignment_id,
+                title:   zeroTitle,
                 course:  'Course ' + activeCourses[i].id,
                 due:     sub.assignment && sub.assignment.due_at ? new Date(sub.assignment.due_at) : null,
                 status:  'zeroed',
