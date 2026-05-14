@@ -180,6 +180,8 @@
     flex-direction: column;
     gap: 2px;
   }
+  .card-due { font-size: 0.72rem; color: var(--sub); }
+  .due-zero { color: var(--fire);    font-weight: 500; }
   .due-miss { color: var(--missing); font-weight: 500; }
   .due-fire { color: var(--fire);    font-weight: 500; }
   .due-soon { color: var(--soon); }
@@ -460,15 +462,18 @@ async function loadCanvas() {
   if (!cfg.token) { showEmpty(); return; }
   showLoading(true);
   try {
-    const [missingRes, upRes] = await Promise.all([
+    const [missingRes, upRes, plannerRes] = await Promise.all([
       fetch(PROXY + '/api/v1/users/self/missing_submissions?filter[]=submittable&per_page=50',
         { headers: { 'Authorization': 'Bearer ' + cfg.token } }),
       fetch(PROXY + '/api/v1/users/self/upcoming_events?per_page=50',
+        { headers: { 'Authorization': 'Bearer ' + cfg.token } }),
+      fetch(PROXY + '/api/v1/planner/items?per_page=50',
         { headers: { 'Authorization': 'Bearer ' + cfg.token } }),
     ]);
 
     const missingRaw  = missingRes.ok  ? await missingRes.json() : [];
     const upcomingRaw = upRes.ok       ? await upRes.json()      : [];
+    const plannerRaw  = plannerRes.ok  ? await plannerRes.json() : [];
 
     const seen = new Set();
     assignments = [];
@@ -565,6 +570,19 @@ async function loadCanvas() {
         } catch(e) { console.warn('Zero course enrich error:', e.message); }
       }
     } catch(e) { console.warn('Zero detection error:', e.message); }
+
+
+    // Also pull from planner — catches newly assigned work not yet in upcoming_events
+    plannerRaw.filter(p => p.plannable_type === 'assignment' && p.plannable).forEach(p => {
+      const id  = String(p.plannable_id);
+      if (seen.has(id)) return;
+      const due = p.plannable.due_at ? new Date(p.plannable.due_at) : (p.plannable_date ? new Date(p.plannable_date) : null);
+      if (!due || due < academicStart) return;
+      const title = p.plannable.title || p.plannable.name || '';
+      if (!title) return;
+      seen.add(id);
+      assignments.push({ id, title, course: 'Course ' + (p.course_id || ''), due, status: 'upcoming' });
+    });
 
     // Filter out already graded/submitted assignments from upcoming list
     try {
@@ -695,7 +713,7 @@ function makeCard(a) {
   const _td = new Date(); _td.setHours(0,0,0,0);
   const _dy = a.due ? Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-_td)/86400000) : 999;
   const pillLbl  = { zero:'🔴 Graded Zero', miss:'⚠️ Missing', fire:'🔴 Today', soon:_dy===1?'🟠 Tomorrow':'🟠 This Week', ok:'🟡 Next Week', chill:'🟢 Later' };
-  const dueClass = { miss:'due-miss', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
+  const dueClass = { zero:'due-zero', miss:'due-miss', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
 
   const card = document.createElement('div');
   card.className = `a-card${checked?' done':''}${a.status==='missing'?' c-missing':''}${a.status==='zeroed'?' c-zeroed':''}`;

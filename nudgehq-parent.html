@@ -655,22 +655,28 @@ window.loadCanvas = async function() {
         }).filter(Boolean);
     }
 
-    // Also pull from planner as a fallback/supplement
-    if (upRaw.length === 0 && plannerRes.ok) {
+    // Also pull from planner — catches newly assigned work not in upcoming_events yet
+    if (plannerRes.ok) {
       const plannerItems = await plannerRes.json();
-      upRaw = plannerItems
+      plannerItems
         .filter(p => p.plannable_type === 'assignment' && p.plannable)
-        .map(p => ({
-          id:              p.plannable_id,
-          name:            p.plannable.title || 'Untitled',
-          course_id:       p.course_id || null,
-          due_at:          p.plannable_date || p.plannable.due_at || null,
-          points_possible: p.plannable.points_possible || null,
-        }));
+        .forEach(p => {
+          const id = String(p.plannable_id);
+          if (seen.has(id)) return;
+          const due = p.plannable.due_at ? new Date(p.plannable.due_at) : (p.plannable_date ? new Date(p.plannable_date) : null);
+          if (!due || due < academicYearStart) return;
+          const title = p.plannable.title || p.plannable.name || '';
+          if (!title || /\d+/.test(title) && title.length < 5) return;
+          seen.add(id);
+          upRaw.push({
+            id:              p.plannable_id,
+            name:            title,
+            course_id:       p.course_id || null,
+            due_at:          p.plannable.due_at || p.plannable_date || null,
+            points_possible: p.plannable.points_possible || null,
+          });
+        });
     }
-    const missingIds = new Set(missingRaw.map(a=>String(a.id)));
-    const seen       = new Set();
-    assignments      = [];
 
     missingRaw.forEach(a => {
       const id = String(a.id);
@@ -1186,9 +1192,9 @@ document.getElementById('empty').style.display='block';
 updateStats();
 
 // Auto-open settings drawer if no token saved
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('nhq_cred_api-token');
-  if (!token) setTimeout(() => openDrawer(), 500);
+  if (!token) setTimeout(() => openDrawer && openDrawer(), 300);
 });
 
 // ══════════════════════════════════════
@@ -1196,12 +1202,21 @@ window.addEventListener('load', () => {
 // ══════════════════════════════════════
 const CRED_FIELDS = ['proxy-url','api-token','token-expiry','student-name','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
 
-// Restore saved values on page load
-CRED_FIELDS.forEach(id => {
-  const saved = localStorage.getItem('nhq_cred_' + id);
-  const el    = document.getElementById(id);
-  if (saved && el) el.value = saved;
-});
+// Restore saved values on page load — run immediately, not on load event
+(function restoreCredentials() {
+  CRED_FIELDS.forEach(id => {
+    const saved = localStorage.getItem('nhq_cred_' + id);
+    const el    = document.getElementById(id);
+    if (saved && el) el.value = saved;
+  });
+  // Also directly populate Firebase fields for auto-connect
+  const fbUrl = localStorage.getItem('nhq_cred_fb-url') || localStorage.getItem('nhq_fb_url');
+  const fbKey = localStorage.getItem('nhq_cred_fb-key') || localStorage.getItem('nhq_fb_key');
+  const urlEl = document.getElementById('fb-url');
+  const keyEl = document.getElementById('fb-key');
+  if (fbUrl && urlEl) urlEl.value = fbUrl;
+  if (fbKey && keyEl) keyEl.value = fbKey;
+})();
 
 // Save whenever a field changes
 CRED_FIELDS.forEach(id => {
@@ -1217,19 +1232,15 @@ CRED_FIELDS.forEach(id => {
 });
 
 // Auto-connect Firebase if credentials were restored
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
   const fbUrl = localStorage.getItem('nhq_cred_fb-url') || localStorage.getItem('nhq_fb_url');
   const fbKey = localStorage.getItem('nhq_cred_fb-key') || localStorage.getItem('nhq_fb_key');
-  console.log('[Firebase] Auto-connect check. url:', fbUrl ? fbUrl.slice(0,40)+'...' : 'NOT FOUND', 'key:', fbKey ? 'present' : 'NOT FOUND');
-  console.log('[Firebase] All localStorage keys:', Object.keys(localStorage).filter(k=>k.includes('fb')||k.includes('nhq')));
   if (fbUrl && fbKey) {
     const urlEl = document.getElementById('fb-url');
     const keyEl = document.getElementById('fb-key');
     if (urlEl) urlEl.value = fbUrl;
     if (keyEl) keyEl.value = fbKey;
-    setTimeout(() => window.connectFirebase && window.connectFirebase(), 400);
-  } else {
-    console.warn('[Firebase] No credentials found in localStorage — not auto-connecting');
+    setTimeout(() => window.connectFirebase && window.connectFirebase(), 200);
   }
 });
 
@@ -1242,10 +1253,10 @@ window.clearCreds = function() {
 };
 
 // Auto-load Canvas if token was restored
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('nhq_cred_api-token');
   if (token) {
-    setTimeout(() => window.loadCanvas && window.loadCanvas(), 600);
+    setTimeout(() => window.loadCanvas && window.loadCanvas(), 500);
   }
 });
 </script>
