@@ -678,6 +678,9 @@ window.loadCanvas = async function() {
         });
     }
 
+    const seen = new Set();
+    assignments = [];
+
     missingRaw.forEach(a => {
       const id = String(a.id);
       if (seen.has(id)) return; // skip duplicates
