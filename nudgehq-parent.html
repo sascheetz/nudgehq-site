@@ -655,6 +655,10 @@ window.loadCanvas = async function() {
         }).filter(Boolean);
     }
 
+    // Initialize dedup set and assignments array
+    const seen = new Set();
+    assignments = [];
+
     // Also pull from planner — catches newly assigned work not in upcoming_events yet
     if (plannerRes.ok) {
       const plannerItems = await plannerRes.json();
@@ -677,9 +681,6 @@ window.loadCanvas = async function() {
           });
         });
     }
-
-    const seen = new Set();
-    assignments = [];
 
     missingRaw.forEach(a => {
       const id = String(a.id);
