@@ -134,6 +134,7 @@
   .a-card.done { opacity: 0.42; }
   .a-card.done .card-title { text-decoration: line-through; color: var(--muted); }
   .a-card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
+  .a-card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
 
   .card-top {
     display: flex;
@@ -158,6 +159,7 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
+  .p-zero  { background: #fdf0ee; color: var(--fire);    border: 1px solid #f5c5bf; }
   .p-miss  { background: #f9f0fb; color: var(--missing); border: 1px solid #d9aee8; }
   .p-fire  { background: #fdf0ee; color: var(--fire);    border: 1px solid #f5c5bf; }
   .p-soon  { background: #fdf3ea; color: var(--soon);    border: 1px solid #f5d5b0; }
@@ -486,6 +488,53 @@ async function loadCanvas() {
       }
     } catch(e) {}
 
+    // ── Zero detection: graded as 0, never submitted ──
+    try {
+      const enrollRes = await fetch(PROXY + '/api/v1/users/self/enrollments?type[]=StudentEnrollment&state[]=active&per_page=50',
+        { headers: { 'Authorization': 'Bearer ' + cfg.token } });
+      if (enrollRes.ok) {
+        const enrollments = await enrollRes.json();
+        const courseIds   = enrollments.map(e => e.course_id).filter(Boolean);
+        const zeroChecks  = courseIds.map(cid =>
+          fetch(PROXY + '/api/v1/courses/' + cid + '/students/submissions?student_ids[]=self&workflow_state=graded&per_page=50&include[]=assignment',
+            { headers: { 'Authorization': 'Bearer ' + cfg.token } })
+        );
+        const zeroResults = await Promise.all(zeroChecks);
+        const seenIds = new Set(assignments.map(a => String(a.id)));
+        for (const res of zeroResults) {
+          if (!res.ok) continue;
+          const subs = await res.json();
+          subs.forEach(sub => {
+            const isZero         = sub.score === 0 || sub.score === null;
+            const neverSubmitted = !sub.submitted_at;
+            const wasGraded      = sub.grader_id && sub.grader_id > 0;
+            const zeroTitle      = sub.assignment ? (sub.assignment.name || sub.assignment.title) : null;
+            if (isZero && neverSubmitted && wasGraded && zeroTitle && !seenIds.has(String(sub.assignment_id))) {
+              seenIds.add(String(sub.assignment_id));
+              assignments.push({
+                id:     String(sub.assignment_id),
+                title:  zeroTitle,
+                course: 'Course ' + (sub.assignment ? sub.assignment.course_id : ''),
+                due:    sub.assignment && sub.assignment.due_at ? new Date(sub.assignment.due_at) : null,
+                status: 'zeroed',
+                grade:  sub.grade,
+                points: sub.assignment ? sub.assignment.points_possible : null,
+              });
+            }
+          });
+        }
+        // Enrich zeroed course names
+        const courseMap = {};
+        enrollments.forEach(e => { if (e.course_id && e.course) courseMap[String(e.course_id)] = e.course.name || e.course.course_code || ''; });
+        assignments.forEach(a => {
+          if (a.status === 'zeroed') {
+            const cid = String(a.course).replace(/^Course\s+/i,'').trim();
+            if (courseMap[cid]) a.course = courseMap[cid];
+          }
+        });
+      }
+    } catch(e) { console.warn('Zero detection error:', e.message); }
+
     // Filter out already graded/submitted assignments from upcoming list
     try {
       const enrollRes = await fetch(PROXY + '/api/v1/users/self/enrollments?type[]=StudentEnrollment&state[]=active&per_page=50',
@@ -516,8 +565,10 @@ async function loadCanvas() {
     } catch(e) { console.warn('Graded filter error:', e.message); }
 
     assignments.sort((a,b) => {
-      if (a.status==='missing'&&b.status!=='missing') return -1;
-      if (b.status==='missing'&&a.status!=='missing') return 1;
+      if (a.status==='zeroed'  && b.status!=='zeroed')   return -1;
+      if (b.status==='zeroed'  && a.status!=='zeroed')   return 1;
+      if (a.status==='missing' && b.status!=='missing')  return -1;
+      if (b.status==='missing' && a.status!=='missing')  return 1;
       return (a.due||new Date(9e15))-(b.due||new Date(9e15));
     });
 
@@ -532,6 +583,7 @@ async function loadCanvas() {
 
 // ── Urgency ──
 function urgency(a) {
+  if (a.status==='zeroed')  return 'zero';
   if (a.status==='missing') return 'miss';
   if (!a.due) return 'chill';
   const now   = new Date();
@@ -548,6 +600,7 @@ function urgency(a) {
 }
 
 function dueLabel(a) {
+  if (a.status==='zeroed') return 'Graded as zero — ' + (a.grade||'0') + ' / ' + (a.points||0) + ' pts';
   if (a.status==='missing') {
     if (!a.due) return 'Officially missing in Canvas';
     const h = Math.abs(Math.floor((a.due-new Date())/3600000));
@@ -577,13 +630,15 @@ function renderCards() {
   document.getElementById('progress-fill').style.width  = total ? Math.round(checked/total*100)+'%' : '0%';
   document.getElementById('progress-label').textContent = checked+' / '+total;
 
+  const zeroed   = assignments.filter(a=>a.status==='zeroed'&&!localChecked[a.id]);
   const missing  = assignments.filter(a=>a.status==='missing'&&!localChecked[a.id]);
-  const upcoming = assignments.filter(a=>a.status!=='missing'&&!localChecked[a.id]);
+  const upcoming = assignments.filter(a=>a.status!=='missing'&&a.status!=='zeroed'&&!localChecked[a.id]);
   const done     = assignments.filter(a=>localChecked[a.id]===true);
 
   document.getElementById('empty').style.display    = total===0?'block':'none';
   document.getElementById('all-done').classList.toggle('show', total>0&&done.length===total);
 
+  if (zeroed.length)   { wrap.appendChild(sectionHead('🔴 Graded Zero'));        zeroed.forEach(a=>wrap.appendChild(makeCard(a))); }
   if (missing.length)  { wrap.appendChild(sectionHead('⚠️ Overdue / Missing')); missing.forEach(a=>wrap.appendChild(makeCard(a))); }
   if (upcoming.length) { wrap.appendChild(sectionHead('📅 Upcoming'));           upcoming.forEach(a=>wrap.appendChild(makeCard(a))); }
   if (done.length)     { wrap.appendChild(sectionHead('✓ Completed'));           done.forEach(a=>wrap.appendChild(makeCard(a))); }
@@ -600,12 +655,12 @@ function makeCard(a) {
   const checked  = localChecked[a.id]===true;
   const u        = urgency(a);
   const subType  = localSubTypes[a.id] || {};
-  const pillMap  = { miss:'p-miss', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' };
+  const pillMap  = { zero:'p-zero', miss:'p-miss', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' };
   const pillLbl  = { miss:'⚠️ Missing', fire:'🔴 Today', soon:'🟠 This Week', ok:'🟡 Coming Up', chill:'🟢 Later' };
   const dueClass = { miss:'due-miss', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
 
   const card = document.createElement('div');
-  card.className = `a-card${checked?' done':''}${a.status==='missing'?' c-missing':''}`;
+  card.className = `a-card${checked?' done':''}${a.status==='missing'?' c-missing':''}${a.status==='zeroed'?' c-zeroed':''}`;
 
   // Top row
   const top = document.createElement('div');
