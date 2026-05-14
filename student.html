@@ -484,6 +484,35 @@ async function loadCanvas() {
       }
     } catch(e) {}
 
+    // Filter out already graded/submitted assignments from upcoming list
+    try {
+      const enrollRes = await fetch(PROXY + '/api/v1/users/self/enrollments?type[]=StudentEnrollment&state[]=active&per_page=50',
+        { headers: { 'Authorization': 'Bearer ' + cfg.token } });
+      if (enrollRes.ok) {
+        const enrollments = await enrollRes.json();
+        const courseIds   = enrollments.map(e => e.course_id).filter(Boolean);
+        const gradedChecks = courseIds.map(cid =>
+          fetch(PROXY + '/api/v1/courses/' + cid + '/students/submissions?student_ids[]=self&workflow_state[]=graded&workflow_state[]=submitted&per_page=50',
+            { headers: { 'Authorization': 'Bearer ' + cfg.token } })
+        );
+        const gradedResults = await Promise.all(gradedChecks);
+        const gradedIds = new Set();
+        for (const res of gradedResults) {
+          if (!res.ok) continue;
+          const subs = await res.json();
+          subs.forEach(s => {
+            if (s.assignment_id && (s.workflow_state==='graded'||s.workflow_state==='submitted')) {
+              gradedIds.add(String(s.assignment_id));
+            }
+          });
+        }
+        const before = assignments.length;
+        assignments = assignments.filter(a => a.status!=='upcoming' || !gradedIds.has(String(a.id)));
+        const removed = before - assignments.length;
+        if (removed > 0) console.log('Filtered out', removed, 'graded/submitted assignments');
+      }
+    } catch(e) { console.warn('Graded filter error:', e.message); }
+
     assignments.sort((a,b) => {
       if (a.status==='missing'&&b.status!=='missing') return -1;
       if (b.status==='missing'&&a.status!=='missing') return 1;
