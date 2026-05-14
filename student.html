@@ -631,7 +631,12 @@ function urgency(a) {
 }
 
 function dueLabel(a) {
-  if (a.status==='zeroed') return 'Graded as zero — ' + (a.grade||'0') + ' / ' + (a.points||0) + ' pts';
+  if (a.status==='zeroed') {
+    const scoreStr = (a.grade !== null && a.grade !== undefined) ? a.grade : '0';
+    const ptsStr   = a.points ? ' / ' + a.points + ' pts' : '';
+    const duePart  = a.due ? ' · was due ' + a.due.toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    return 'Graded as zero — ' + scoreStr + ptsStr + duePart;
+  }
   if (a.status==='missing') {
     if (!a.due) return 'Officially missing in Canvas';
     const h = Math.abs(Math.floor((a.due-new Date())/3600000));
@@ -687,7 +692,9 @@ function makeCard(a) {
   const u        = urgency(a);
   const subType  = localSubTypes[a.id] || {};
   const pillMap  = { zero:'p-zero', miss:'p-miss', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' };
-  const pillLbl  = { miss:'⚠️ Missing', fire:'🔴 Today', soon:'🟠 This Week', ok:'🟡 Coming Up', chill:'🟢 Later' };
+  const _td = new Date(); _td.setHours(0,0,0,0);
+  const _dy = a.due ? Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-_td)/86400000) : 999;
+  const pillLbl  = { zero:'🔴 Graded Zero', miss:'⚠️ Missing', fire:'🔴 Today', soon:_dy===1?'🟠 Tomorrow':'🟠 This Week', ok:'🟡 Next Week', chill:'🟢 Later' };
   const dueClass = { miss:'due-miss', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
 
   const card = document.createElement('div');
