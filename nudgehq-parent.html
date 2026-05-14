@@ -859,16 +859,15 @@ function urgency(a) {
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
-  if (days <= 0) return 'fire';  // today or overdue
-  if (days === 1) return 'fire'; // tomorrow
-  // "This Week" = before next Sunday (end of current week)
-  // dayOfWeek: 0=Sun,1=Mon,...,6=Sat
-  // days until Saturday = 6 - dayOfWeek (or 7 if today is Sunday)
-  const dow = today.getDay();
-  const daysUntilSaturday = dow === 0 ? 6 : (6 - dow);
-  if (days <= daysUntilSaturday) return 'soon'; // this week
-  if (days <= 13) return 'ok';  // next week (Mon-Sun after this one)
-  return 'chill';
+  if (days <= 0)  return 'fire';   // due today
+  if (days === 1) return 'soon';   // tomorrow
+  // "This Week" = remaining school days up to and including this Friday
+  const dow = today.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const daysUntilFriday = dow <= 5 ? (5 - dow) : 0; // days until Friday (0 if Fri/Sat)
+  if (days <= daysUntilFriday) return 'soon'; // this week
+  // "Next Week" = Mon-Fri of next school week (days 7-11 roughly)
+  if (days <= daysUntilFriday + 7) return 'ok'; // next week
+  return 'chill'; // beyond next week
 }
 function countdown(a) {
   if (a.status==='zeroed')  return 'Graded as zero — never submitted';
@@ -981,7 +980,7 @@ function renderCards() {
     const sDone  = studentChecked[a.id]===true;
     const isMiss = a.status==='missing';
 
-    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon:'🟠 This Week', ok:'🟡 Coming Up', chill:'🟢 Later' }[pDone?'done':u] || '';
+    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon: (()=>{ if(!a.due)return'🟠 This Week'; const d=Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/86400000); return d===1?'🟠 Due Tomorrow':'🟠 This Week'; })(), ok:'🟡 Next Week', chill:'🟢 Later' }[pDone?'done':u] || '';
     const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
