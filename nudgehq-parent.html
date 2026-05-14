@@ -546,14 +546,17 @@ let firebaseDb   = null;
 // ══════════════════════════════════════
 window.connectFirebase = async function() {
   // Read from fields, fall back to localStorage if fields are empty
-  const url = (document.getElementById('fb-url').value.trim())
+  const urlField = document.getElementById('fb-url');
+  const keyField = document.getElementById('fb-key');
+  const url = (urlField ? urlField.value.trim() : '')
     || localStorage.getItem('nhq_cred_fb-url')
     || localStorage.getItem('nhq_fb_url')
     || '';
-  const key = (document.getElementById('fb-key').value.trim())
+  const key = (keyField ? keyField.value.trim() : '')
     || localStorage.getItem('nhq_cred_fb-key')
     || localStorage.getItem('nhq_fb_key')
     || '';
+  console.log('[Firebase] connectFirebase called. url:', url ? url.slice(0,40)+'...' : 'EMPTY', 'key:', key ? 'present' : 'EMPTY');
   if (!url || !key) { showToast('Enter both Firebase URL and API Key.', 'err'); return; }
 
   try {
@@ -1131,13 +1134,16 @@ CRED_FIELDS.forEach(id => {
 window.addEventListener('load', () => {
   const fbUrl = localStorage.getItem('nhq_cred_fb-url') || localStorage.getItem('nhq_fb_url');
   const fbKey = localStorage.getItem('nhq_cred_fb-key') || localStorage.getItem('nhq_fb_key');
+  console.log('[Firebase] Auto-connect check. url:', fbUrl ? fbUrl.slice(0,40)+'...' : 'NOT FOUND', 'key:', fbKey ? 'present' : 'NOT FOUND');
+  console.log('[Firebase] All localStorage keys:', Object.keys(localStorage).filter(k=>k.includes('fb')||k.includes('nhq')));
   if (fbUrl && fbKey) {
-    // Populate fields first, then connect
     const urlEl = document.getElementById('fb-url');
     const keyEl = document.getElementById('fb-key');
     if (urlEl) urlEl.value = fbUrl;
     if (keyEl) keyEl.value = fbKey;
     setTimeout(() => window.connectFirebase && window.connectFirebase(), 400);
+  } else {
+    console.warn('[Firebase] No credentials found in localStorage — not auto-connecting');
   }
 });
 
