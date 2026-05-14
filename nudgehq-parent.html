@@ -622,7 +622,6 @@ window.loadCanvas = async function() {
     ]);
 
     const missingRaw = missingRes.ok ? await missingRes.json() : [];
-    console.log('[Missing] Raw missing from Canvas API:', missingRaw.length, missingRaw.map(a=>a.name));
 
     // upcoming_events returns assignments with a different shape — normalize it
     let upRaw = [];
@@ -798,10 +797,7 @@ window.loadCanvas = async function() {
     });
 
     // Filter out assignments parent has confirmed done
-    const beforeDoneFilter = assignments.filter(a=>a.status==='missing').length;
     assignments = assignments.filter(a => !parentDone[a.id]);
-    const afterDoneFilter = assignments.filter(a=>a.status==='missing').length;
-    console.log('[Missing] After parentDone filter:', afterDoneFilter, '(removed', beforeDoneFilter-afterDoneFilter, 'confirmed done)');
 
     document.getElementById('last-sync').textContent = 'Synced · ' + fmtTime(new Date());
     renderAll();
@@ -1059,8 +1055,9 @@ window.toggleParentDone = async function(id) {
 
 function updateStats() {
   const zeroed   = assignments.filter(a=>a.status==='zeroed'&&!parentDone[a.id]);
-  const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]&&studentChecked[a.id]!==true);
-  console.log('[Stats] Missing count:', missing.length, '| studentChecked removes:', assignments.filter(a=>a.status==='missing'&&studentChecked[a.id]===true).length);
+  // Missing count shows ALL missing from Canvas regardless of student check-offs
+  // (student checking off doesn't mean it was actually submitted)
+  const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]);
   const fire     = assignments.filter(a=>urgency(a)==='fire'&&a.status!=='missing'&&a.status!=='zeroed'&&!parentDone[a.id]);
   const checked  = Object.values(studentChecked).filter(Boolean).length;
   document.getElementById('s-missing').textContent = (zeroed.length + missing.length)||'0';
