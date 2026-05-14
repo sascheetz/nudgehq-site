@@ -358,7 +358,21 @@
 const PROXY = 'https://nudgehq-proxy-production.up.railway.app';
 
 // ── Config ──
-let cfg = JSON.parse(localStorage.getItem('nhq_student_cfg') || '{}');
+// Load cfg with fallback to individual keys for resilience
+let cfg = (function() {
+  const saved = JSON.parse(localStorage.getItem('nhq_student_cfg') || '{}');
+  // If cfg is empty, try individual keys as fallback
+  if (!saved.token) {
+    saved.token = localStorage.getItem('nhq_student_token') || '';
+    saved.fbUrl = localStorage.getItem('nhq_student_fbUrl') || '';
+    saved.fbKey = localStorage.getItem('nhq_student_fbKey') || '';
+    if (saved.token) {
+      // Resave to main key
+      localStorage.setItem('nhq_student_cfg', JSON.stringify(saved));
+    }
+  }
+  return saved;
+})();
 
 // ── State ──
 let assignments   = [];
@@ -403,6 +417,10 @@ window.saveConfig = function() {
     fbKey: document.getElementById('cfg-fb-key').value.trim(),
   };
   localStorage.setItem('nhq_student_cfg', JSON.stringify(cfg));
+  // Save to individual keys as backup
+  localStorage.setItem('nhq_student_token', cfg.token);
+  localStorage.setItem('nhq_student_fbUrl', cfg.fbUrl);
+  localStorage.setItem('nhq_student_fbKey', cfg.fbKey);
   document.getElementById('config-panel').classList.remove('show');
   init();
 };
