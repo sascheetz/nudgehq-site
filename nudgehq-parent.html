@@ -703,6 +703,7 @@ window.loadCanvas = async function() {
     });
 
     // ── Zero detection: graded assignments with score=0 and no submission ──
+    console.log('[Zero] coursesForZeroRes ok:', coursesForZeroRes.ok);
     if (coursesForZeroRes.ok) {
       try {
         const activeCourses = await coursesForZeroRes.json();
@@ -726,7 +727,8 @@ window.loadCanvas = async function() {
               const zeroTitle = (sub.assignment && (sub.assignment.name || sub.assignment.title))
                 ? (sub.assignment.name || sub.assignment.title)
                 : null;
-              if (!zeroTitle) return; // skip if we can't get the name
+              if (!zeroTitle) { console.log('[Zero] Skipping — no title for assignment_id:', sub.assignment_id); return; }
+              console.log('[Zero] Found zeroed assignment:', zeroTitle);
               seen.add(String(sub.assignment_id));
               assignments.push({
                 id:      String(sub.assignment_id),
@@ -1022,7 +1024,10 @@ function renderCards() {
     const sDone  = studentChecked[a.id]===true;
     const isMiss = a.status==='missing';
 
-    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon: (()=>{ if(!a.due)return'🟠 This Week'; const d=Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/86400000); return d===1?'🟠 Due Tomorrow':'🟠 This Week'; })(), ok:'🟡 Next Week', chill:'🟢 Later' }[pDone?'done':u] || '';
+    const _today2 = new Date(); _today2.setHours(0,0,0,0);
+    const _days2  = a.due ? Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate()) - _today2) / 86400000) : 999;
+    const _soonLabel = _days2 === 1 ? '🟠 Due Tomorrow' : '🟠 This Week';
+    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon:_soonLabel, ok:'🟡 Next Week', chill:'🟢 Later' }[pDone?'done':u] || '';
     const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
