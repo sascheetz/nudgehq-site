@@ -1001,13 +1001,13 @@ function renderCards() {
         ${sDone?`<span class="student-checked-badge">✅ He marked this done</span>`:''}
         ${(function() {
           const st = studentSubTypes[a.id];
-          if (!st || !st.type) return '<span style="font-size:0.55rem;color:var(--muted)">📋 Submission type not set yet</span>';
-          const icons = { paper:'📄', canvas:'🖥️', external:'🔗', both:'📤' };
-          const labels = { paper:'Paper — hand in class', canvas:'Canvas — submit online', external:'External', both:'Both — external + Canvas link' };
-          const icon  = icons[st.type]  || '📋';
-          const label = labels[st.type] || st.type;
-          const note  = st.note ? ' · ' + st.note : '';
-          return '<span style="font-size:0.58rem;color:var(--subink);margin-top:2px;display:block">' + icon + ' ' + label + note + '</span>';
+          if (!st || !st.type) return '<span style="font-size:0.68rem;color:var(--muted);margin-top:4px;display:block">📋 Submission type not set</span>';
+          const icons  = { paper:'📄', canvas:'🖥️', external:'🔗', both:'📤' };
+          const labels = { paper:'Paper — hand in class', canvas:'Canvas — submit online', external:'External platform', both:'External + linked in Canvas' };
+          const icon   = icons[st.type]  || '📋';
+          const label  = labels[st.type] || st.type;
+          const note   = st.note ? ' · <strong>' + st.note + '</strong>' : '';
+          return '<span style="font-size:0.72rem;color:var(--subink);margin-top:4px;display:block;padding:5px 8px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)">' + icon + ' ' + label + note + '</span>';
         })()}
         <span class="source-badge sb-api">● Live from Canvas API</span>
       </div>
