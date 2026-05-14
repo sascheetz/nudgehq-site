@@ -509,13 +509,18 @@ async function loadCanvas() {
             const neverSubmitted = !sub.submitted_at;
             const wasGraded      = sub.grader_id && sub.grader_id > 0;
             const zeroTitle      = sub.assignment ? (sub.assignment.name || sub.assignment.title) : null;
+            const due = sub.assignment && sub.assignment.due_at ? new Date(sub.assignment.due_at) : null;
+            // Skip assignments older than current academic year
+            const now2 = new Date();
+            const academicStart = new Date(now2.getMonth()>=7 ? now2.getFullYear() : now2.getFullYear()-1, 7, 1);
+            if (due && due < academicStart) return;
             if (isZero && neverSubmitted && wasGraded && zeroTitle && !seenIds.has(String(sub.assignment_id))) {
               seenIds.add(String(sub.assignment_id));
               assignments.push({
                 id:     String(sub.assignment_id),
                 title:  zeroTitle,
-                course: 'Course ' + (sub.assignment ? sub.assignment.course_id : ''),
-                due:    sub.assignment && sub.assignment.due_at ? new Date(sub.assignment.due_at) : null,
+                course: String(sub.assignment ? sub.assignment.course_id : ''),
+                due,
                 status: 'zeroed',
                 grade:  sub.grade,
                 points: sub.assignment ? sub.assignment.points_possible : null,
@@ -523,15 +528,23 @@ async function loadCanvas() {
             }
           });
         }
-        // Enrich zeroed course names
-        const courseMap = {};
-        enrollments.forEach(e => { if (e.course_id && e.course) courseMap[String(e.course_id)] = e.course.name || e.course.course_code || ''; });
-        assignments.forEach(a => {
-          if (a.status === 'zeroed') {
-            const cid = String(a.course).replace(/^Course\s+/i,'').trim();
-            if (courseMap[cid]) a.course = courseMap[cid];
+        // Enrich zeroed course names using active courses fetch
+        try {
+          const cr = await fetch(PROXY + '/api/v1/users/self/courses?enrollment_state=active&per_page=50',
+            { headers: { 'Authorization': 'Bearer ' + cfg.token } });
+          if (cr.ok) {
+            const courses = await cr.json();
+            const cmap = {};
+            courses.forEach(c => { cmap[String(c.id)] = c.name || c.course_code || ('Course ' + c.id); });
+            assignments.forEach(a => {
+              if (a.status === 'zeroed') {
+                const cid = String(a.course).replace(/^Course\s+/i,'').trim();
+                if (cmap[cid]) a.course = cmap[cid];
+                else if (cmap[a.course]) a.course = cmap[a.course];
+              }
+            });
           }
-        });
+        } catch(e) { console.warn('Zero course enrich error:', e.message); }
       }
     } catch(e) { console.warn('Zero detection error:', e.message); }
 
