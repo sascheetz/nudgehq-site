@@ -545,8 +545,15 @@ let firebaseDb   = null;
 // FIREBASE
 // ══════════════════════════════════════
 window.connectFirebase = async function() {
-  const url = document.getElementById('fb-url').value.trim();
-  const key = document.getElementById('fb-key').value.trim();
+  // Read from fields, fall back to localStorage if fields are empty
+  const url = (document.getElementById('fb-url').value.trim())
+    || localStorage.getItem('nhq_cred_fb-url')
+    || localStorage.getItem('nhq_fb_url')
+    || '';
+  const key = (document.getElementById('fb-key').value.trim())
+    || localStorage.getItem('nhq_cred_fb-key')
+    || localStorage.getItem('nhq_fb_key')
+    || '';
   if (!url || !key) { showToast('Enter both Firebase URL and API Key.', 'err'); return; }
 
   try {
@@ -570,8 +577,11 @@ window.connectFirebase = async function() {
       renderAll();
     });
 
-    localStorage.setItem('nhq_fb_url', url);
-    localStorage.setItem('nhq_fb_key', key);
+    // Save under both key formats for compatibility
+    localStorage.setItem('nhq_fb_url',       url);
+    localStorage.setItem('nhq_fb_key',       key);
+    localStorage.setItem('nhq_cred_fb-url',  url);
+    localStorage.setItem('nhq_cred_fb-key',  key);
     showToast('Firebase connected!', 'ok');
   } catch(e) {
     showToast('Firebase error: ' + e.message, 'err');
@@ -584,17 +594,7 @@ function updateFbStatus(on) {
   el.innerHTML = `<span class="fb-dot"></span> ${on ? 'Connected — syncing live' : 'Not connected'}`;
 }
 
-// Restore saved Firebase on load
-(async function tryRestoreFirebase() {
-  const url = localStorage.getItem('nhq_fb_url');
-  const key = localStorage.getItem('nhq_fb_key');
-  if (url && key) {
-    document.getElementById('fb-url').value = url;
-    document.getElementById('fb-key').value = key;
-    // Auto-connect
-    setTimeout(() => window.connectFirebase && window.connectFirebase(), 500);
-  }
-})();
+// Firebase auto-connect handled by load event listener below
 
 // ══════════════════════════════════════
 // CANVAS API
@@ -1129,10 +1129,15 @@ CRED_FIELDS.forEach(id => {
 
 // Auto-connect Firebase if credentials were restored
 window.addEventListener('load', () => {
-  const fbUrl = localStorage.getItem('nhq_cred_fb-url');
-  const fbKey = localStorage.getItem('nhq_cred_fb-key');
+  const fbUrl = localStorage.getItem('nhq_cred_fb-url') || localStorage.getItem('nhq_fb_url');
+  const fbKey = localStorage.getItem('nhq_cred_fb-key') || localStorage.getItem('nhq_fb_key');
   if (fbUrl && fbKey) {
-    setTimeout(() => window.connectFirebase && window.connectFirebase(), 300);
+    // Populate fields first, then connect
+    const urlEl = document.getElementById('fb-url');
+    const keyEl = document.getElementById('fb-key');
+    if (urlEl) urlEl.value = fbUrl;
+    if (keyEl) keyEl.value = fbKey;
+    setTimeout(() => window.connectFirebase && window.connectFirebase(), 400);
   }
 });
 
