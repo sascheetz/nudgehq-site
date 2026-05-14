@@ -28,7 +28,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: var(--bg); color: var(--ink); font-family: var(--mono); font-size: 13px;
+    background: var(--bg); color: var(--ink); font-family: var(--mono); font-size: 15px;
     min-height: 100vh;
     background-image:
       radial-gradient(ellipse at 0% 0%, rgba(61,90,153,0.05) 0%, transparent 55%),
@@ -47,7 +47,7 @@
   .wordmark h1 strong { font-weight: 600; color: var(--accent); font-style: normal; }
   .wordmark p { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 5px; }
 
-  .s-label { font-size: 0.56rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 9px; }
+  .s-label { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 9px; }
   .s-section { display: flex; flex-direction: column; }
 
   .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
@@ -151,9 +151,9 @@
   .p-done    { background: var(--surface2);         color: var(--muted);   border: 1px solid var(--border); }
   .p-student { background: rgba(245,166,35,0.12);  color: var(--student); border: 1px solid rgba(245,166,35,0.3); }
 
-  .c-title { font-family: var(--serif); font-weight: 300; font-size: 1rem; line-height: 1.35; color: var(--ink); }
-  .c-meta { font-size: 0.59rem; color: var(--subink); display: flex; flex-direction: column; gap: 3px; }
-  .c-countdown { font-size: 0.67rem; font-weight: 500; margin-top: 2px; }
+  .c-title { font-family: var(--serif); font-weight: 300; font-size: 1.1rem; line-height: 1.35; color: var(--ink); }
+  .c-meta { font-size: 0.68rem; color: var(--subink); display: flex; flex-direction: column; gap: 3px; }
+  .c-countdown { font-size: 0.75rem; font-weight: 500; margin-top: 2px; }
   .cd-missing { color: var(--missing); }
   .cd-fire { color: var(--fire); }
   .cd-soon { color: var(--soon); }
@@ -496,7 +496,7 @@ Query: filter[]=submittable</pre></div></div>
     <div class="s-section">
       <div class="s-label">Student Sync (Firebase)</div>
       <div class="field"><label>Firebase Database URL</label><input type="url" id="fb-url" placeholder="https://your-project-default-rtdb.firebaseio.com"></div>
-      <div class="field"><label>Firebase API Key</label><input type="text" id="fb-key" placeholder="AIzaSy…"></div>
+      <div class="field"><label>Firebase API Key</label><input type="password" id="fb-key" placeholder="AIzaSy…"></div>
       <button class="btn btn-primary" onclick="window.connectFirebase && window.connectFirebase()">🔗 Connect Firebase</button>
       <p class="hint"><button class="ilink" onclick="openModal('firebase-modal')">Firebase setup guide →</button></p>
     </div>
@@ -737,6 +737,15 @@ window.loadCanvas = async function() {
     // Enrich course names for all assignments
     await enrichCourseNames(token);
 
+    // Secondary dedup by title+date in case same assignment appears under different IDs
+    const titleDueSet = new Set();
+    assignments = assignments.filter(a => {
+      const key = a.title.trim().toLowerCase() + '|' + (a.due ? a.due.toDateString() : 'nodue');
+      if (titleDueSet.has(key)) return false;
+      titleDueSet.add(key);
+      return true;
+    });
+
     assignments.sort((a, b) => {
       // Sort order: zeroed → missing → upcoming by date
       const order = { zeroed: 0, missing: 1, upcoming: 2 };
@@ -748,9 +757,13 @@ window.loadCanvas = async function() {
       return aDate - bDate;
     });
 
-    document.getElementById('last-sync').textContent = `Synced · ${fmtTime(new Date())}`;
+    // Filter out assignments parent has confirmed done
+    // These are genuinely submitted — no need to show them again on refresh
+    assignments = assignments.filter(a => !parentDone[a.id]);
+
+    document.getElementById('last-sync').textContent = 'Synced · ' + fmtTime(new Date());
     renderAll();
-    showToast(`Loaded ${assignments.length} assignments ✓`, 'ok');
+    showToast('Loaded ' + assignments.length + ' assignments ✓', 'ok');
   } catch(e) { showToast('Error: ' + e.message, 'err'); }
   showLoading(false);
 };
@@ -804,10 +817,18 @@ function urgency(a) {
   if (a.status==='zeroed')  return 'zeroed';
   if (a.status==='missing') return 'missing';
   if (!a.due) return 'chill';
-  const h = (a.due-new Date())/3600000;
-  if (h<=24)  return 'fire';
-  if (h<=168) return 'soon';
-  if (h<=336) return 'ok';
+  // Get days until due (calendar days, not hours)
+  const now     = new Date();
+  const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dueDay  = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  const days    = Math.round((dueDay - today) / 86400000);
+  if (days <= 0) return 'fire';   // today or overdue
+  if (days === 1) return 'fire';  // tomorrow
+  // "This Week" = within the current calendar week (Mon–Sun)
+  const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+  const daysUntilEndOfWeek = 7 - dayOfWeek; // days until next Sunday
+  if (days <= daysUntilEndOfWeek) return 'soon'; // this week
+  if (days <= 14) return 'ok';    // next week or within 2 weeks
   return 'chill';
 }
 function countdown(a) {
@@ -1069,11 +1090,7 @@ window.closeModal = id => document.getElementById(id).classList.remove('open');
 window.switchTab  = name => { document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes(`'${name}'`))); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id===`tab-${name}`)); };
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-function openDrawer() { document.getElementById('settings-drawer').classList.add('open'); }
-function closeDrawer() { document.getElementById('settings-drawer').classList.remove('open'); }
-document.getElementById('settings-drawer').addEventListener('click', function(e) {
-  if (e.target === this) closeDrawer();
-});
+);
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 document.getElementById('empty').style.display='block';
@@ -1139,6 +1156,28 @@ window.addEventListener('load', () => {
 
 </script>
 <script>
+// ══════════════════════════════════════
+// SETTINGS DRAWER
+// ══════════════════════════════════════
+function openDrawer() {
+  const fields = ['proxy-url','api-token','student-name','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
+  fields.forEach(id => {
+    const el  = document.getElementById(id);
+    const val = localStorage.getItem('nhq_cred_' + id);
+    if (el && val) el.value = val;
+  });
+  document.getElementById('settings-drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('settings-drawer').classList.remove('open');
+}
+window.openDrawer  = openDrawer;
+window.closeDrawer = closeDrawer;
+document.addEventListener('DOMContentLoaded', () => {
+  const drawer = document.getElementById('settings-drawer');
+  if (drawer) drawer.addEventListener('click', e => { if (e.target === drawer) closeDrawer(); });
+});
+
 // ══════════════════════════════════════
 // AUTO-FILL FROM QR CODE URL PARAMS
 // ══════════════════════════════════════
