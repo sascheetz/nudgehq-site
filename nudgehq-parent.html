@@ -740,6 +740,42 @@ window.loadCanvas = async function() {
     // Enrich course names for all assignments
     await enrichCourseNames(token);
 
+    // Filter out already graded/submitted upcoming assignments
+    try {
+      const gradedRes = await canvasFetch(
+        '/api/v1/users/self/enrollments?type[]=StudentEnrollment&state[]=active&per_page=50', token
+      );
+      if (gradedRes.ok) {
+        const enrollments = await gradedRes.json();
+        const courseIds   = enrollments.map(e => e.course_id).filter(Boolean);
+
+        // Fetch graded submissions for each active course
+        const gradedChecks = courseIds.map(cid =>
+          canvasFetch('/api/v1/courses/' + cid + '/students/submissions?student_ids[]=self&workflow_state[]=graded&workflow_state[]=submitted&per_page=50', token)
+        );
+        const gradedResults = await Promise.all(gradedChecks);
+        const gradedIds = new Set();
+
+        for (const res of gradedResults) {
+          if (!res.ok) continue;
+          const subs = await res.json();
+          subs.forEach(s => {
+            if (s.assignment_id && (s.workflow_state === 'graded' || s.workflow_state === 'submitted')) {
+              gradedIds.add(String(s.assignment_id));
+            }
+          });
+        }
+
+        // Remove graded/submitted assignments from upcoming list
+        const before = assignments.length;
+        assignments = assignments.filter(a =>
+          a.status !== 'upcoming' || !gradedIds.has(String(a.id))
+        );
+        const removed = before - assignments.length;
+        if (removed > 0) console.log('Filtered out', removed, 'already graded/submitted assignments');
+      }
+    } catch(e) { console.warn('Graded filter error:', e.message); }
+
     // Secondary dedup by title+date in case same assignment appears under different IDs
     const titleDueSet = new Set();
     assignments = assignments.filter(a => {
