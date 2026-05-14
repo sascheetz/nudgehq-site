@@ -97,28 +97,37 @@
 
   /* ── Section labels ── */
   .section-head {
-    padding: 16px 16px 6px;
-    font-size: 0.58rem;
+    padding: 16px 12px 6px;
+    font-size: 0.62rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--muted);
     font-weight: 600;
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2px;
   }
 
   /* ── Cards ── */
-  .cards-wrap { padding: 0 12px; }
+  .cards-wrap {
+    padding: 0 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
 
   .a-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 14px;
-    margin-bottom: 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s, transform 0.2s;
   }
+  .a-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
   .a-card.done { opacity: 0.42; }
   .a-card.done .card-title { text-decoration: line-through; color: var(--muted); }
   .a-card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
@@ -552,6 +561,7 @@ function dueLabel(a) {
 function renderCards() {
   const wrap = document.getElementById('card-wrap');
   wrap.innerHTML = '';
+  wrap.className = 'cards-wrap';
 
   const total   = assignments.length;
   const checked = assignments.filter(a=>localChecked[a.id]===true).length;
@@ -686,10 +696,7 @@ function makeCard(a) {
   card.appendChild(actions);
 
   // Wrap in cards-wrap div
-  const wrapper = document.createElement('div');
-  wrapper.className = 'cards-wrap';
-  wrapper.appendChild(card);
-  return wrapper;
+  return card;
 }
 
 // ── Undo ──
