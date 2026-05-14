@@ -359,6 +359,12 @@
     <button class="mb-btn" id="mb-btn" onclick="nudgeAllMissing()">📲 Text all missing</button>
   </div>
 
+  <!-- Token expiry banner -->
+  <div id="expiry-banner" style="display:none;background:#fffbf0;border:1px solid #f0d090;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+    <strong id="expiry-title" style="color:#7a4800;font-size:0.75rem;display:block;margin-bottom:3px;">⏰ Canvas API token expiring soon</strong>
+    <span id="expiry-sub" style="font-size:0.65rem;color:var(--subink);line-height:1.55;">Generate a new token before it expires to keep the dashboard working.</span>
+  </div>
+
   <!-- Student checked banner -->
   <div id="student-banner">
     <strong id="sb-title">✅ He checked off some assignments</strong>
@@ -487,6 +493,7 @@ Query: filter[]=submittable</pre></div></div>
       <div class="canvas-domain">🏫 lakota.instructure.com <span>● confirmed</span></div>
       <div class="field"><label>Proxy URL</label><input type="text" id="proxy-url" placeholder="https://your-proxy.up.railway.app"></div>
       <div class="field"><label>Student API Token</label><input type="password" id="api-token" placeholder="Paste token from Canvas settings…"></div>
+      <div class="field"><label>Token Expiry Date</label><input type="date" id="token-expiry" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-family:var(--mono);font-size:0.63rem;color:var(--ink);outline:none;width:100%;"></div>
       <div class="field"><label>Student name (for texts)</label><input type="text" id="student-name" placeholder="e.g. Ethan"></div>
       <button class="btn btn-primary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Load from Canvas API</button>
       <p class="hint">Token: Canvas → Account → Settings → Approved Integrations → + New Access Token. <button class="ilink" onclick="openModal('token-modal')">Guide →</button></p>
@@ -603,6 +610,7 @@ function updateFbStatus(on) {
 // CANVAS API
 // ══════════════════════════════════════
 window.loadCanvas = async function() {
+  checkTokenExpiry();
   const token = document.getElementById('api-token').value.trim();
   if (!token) { showToast('Paste your Canvas API token first.', 'err'); openModal('token-modal'); return; }
   showLoading(true);
@@ -897,20 +905,54 @@ function fmtTime(d) { return d.toLocaleTimeString('en-US',{hour:'numeric',minute
 // ══════════════════════════════════════
 function getDateLabel(a) {
   if (a.status === 'missing') return '⚠️ Missing';
+  if (a.status === 'zeroed')  return '🔴 Graded Zero';
   if (!a.due) return 'No due date';
   const now   = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
   const diff  = Math.round((due - today) / 86400000);
-  if (diff < 0)  return '⚠️ Overdue';
+  if (diff < 0)   return '⚠️ Overdue';
   if (diff === 0) return '📅 Today';
   if (diff === 1) return '📅 Tomorrow';
-  if (diff <= 6)  return '📅 This Week — ' + a.due.toLocaleDateString('en-US', {weekday:'long'});
-  // Group by week after that
+  // "This Week" = remaining school days up to and including this Friday
+  const dow = today.getDay(); // 0=Sun,...,5=Fri,6=Sat
+  const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
+  if (diff <= daysUntilFriday) return '📅 This Week — ' + a.due.toLocaleDateString('en-US', {weekday:'long'});
+  // Next week = school days of next Mon-Fri
+  if (diff <= daysUntilFriday + 7) return '📅 Next Week — ' + a.due.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+  // Beyond next week — group by date
   return '📅 ' + a.due.toLocaleDateString('en-US', {month:'long', day:'numeric'});
 }
 
-function renderAll() { renderBanners(); renderCards(); updateStats(); }
+function checkTokenExpiry() {
+  const expiry = localStorage.getItem('nhq_cred_token-expiry');
+  const banner = document.getElementById('expiry-banner');
+  if (!expiry || !banner) return;
+  const expiryDate = new Date(expiry);
+  const today      = new Date();
+  today.setHours(0,0,0,0);
+  const daysLeft   = Math.round((expiryDate - today) / 86400000);
+  if (daysLeft < 0) {
+    banner.style.display = 'block';
+    banner.style.background = '#fdf0ee';
+    banner.style.borderColor = '#f5c5bf';
+    document.getElementById('expiry-title').style.color = 'var(--fire)';
+    document.getElementById('expiry-title').textContent = '🔴 Canvas API token has expired!';
+    document.getElementById('expiry-sub').textContent   = 'The dashboard cannot load assignments. Go to Canvas → Account → Settings → Approved Integrations and generate a new token.';
+  } else if (daysLeft <= 14) {
+    banner.style.display = 'block';
+    document.getElementById('expiry-title').textContent = '⏰ Token expires in ' + daysLeft + ' day' + (daysLeft===1?'':'s');
+    document.getElementById('expiry-sub').textContent   = 'Generate a new token soon: Canvas → Account → Settings → Approved Integrations → + New Access Token.';
+  } else if (daysLeft <= 30) {
+    banner.style.display = 'block';
+    document.getElementById('expiry-title').textContent = '📅 Token expires in ' + daysLeft + ' days';
+    document.getElementById('expiry-sub').textContent   = 'You have time, but plan to generate a new token before it expires.';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function renderAll() { renderBanners(); renderCards(); updateStats(); checkTokenExpiry(); }
 
 function renderBanners() {
   // Missing
@@ -1144,7 +1186,7 @@ window.addEventListener('load', () => {
 // ══════════════════════════════════════
 // PERSIST CREDENTIALS IN LOCALSTORAGE
 // ══════════════════════════════════════
-const CRED_FIELDS = ['proxy-url','api-token','student-name','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
+const CRED_FIELDS = ['proxy-url','api-token','token-expiry','student-name','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
 
 // Restore saved values on page load
 CRED_FIELDS.forEach(id => {
