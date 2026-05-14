@@ -628,7 +628,7 @@ window.loadCanvas = async function() {
     const [missingRes, upRes, plannerRes, coursesForZeroRes] = await Promise.all([
       canvasFetch('/api/v1/users/self/missing_submissions?filter[]=submittable&per_page=50', token),
       canvasFetch('/api/v1/users/self/upcoming_events?per_page=50', token),
-      canvasFetch('/api/v1/planner/items?per_page=50&filter=new_activity', token),
+      canvasFetch('/api/v1/planner/items?per_page=50', token),
       canvasFetch('/api/v1/users/self/courses?enrollment_state=active&per_page=50', token),
     ]);
 
@@ -654,6 +654,12 @@ window.loadCanvas = async function() {
           };
         }).filter(Boolean);
     }
+
+    // Academic year start — only show assignments from current school year
+    const now2 = new Date();
+    const academicYearStart = new Date(
+      now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1
+    ); // Aug 1 of current academic year
 
     // Initialize dedup set and assignments array
     const seen = new Set();
@@ -695,10 +701,6 @@ window.loadCanvas = async function() {
         source: 'api',
       });
     });
-    // Only show assignments due after Aug 1 of current academic year (filters last year)
-    const now2 = new Date();
-    const academicYearStart = new Date(now2.getMonth() >= 7
-      ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1); // Aug 1
     upRaw.forEach(a => {
       const id = String(a.id);
       if (seen.has(id)) return; // skip duplicates and already-missing items
