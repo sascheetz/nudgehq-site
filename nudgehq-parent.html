@@ -856,18 +856,19 @@ function urgency(a) {
   if (a.status==='zeroed')  return 'zeroed';
   if (a.status==='missing') return 'missing';
   if (!a.due) return 'chill';
-  // Get days until due (calendar days, not hours)
-  const now     = new Date();
-  const today   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dueDay  = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
-  const days    = Math.round((dueDay - today) / 86400000);
-  if (days <= 0) return 'fire';   // today or overdue
-  if (days === 1) return 'fire';  // tomorrow
-  // "This Week" = within the current calendar week (Mon–Sun)
-  const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
-  const daysUntilEndOfWeek = 7 - dayOfWeek; // days until next Sunday
-  if (days <= daysUntilEndOfWeek) return 'soon'; // this week
-  if (days <= 14) return 'ok';    // next week or within 2 weeks
+  const now    = new Date();
+  const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  const days   = Math.round((dueDay - today) / 86400000);
+  if (days <= 0) return 'fire';  // today or overdue
+  if (days === 1) return 'fire'; // tomorrow
+  // "This Week" = before next Sunday (end of current week)
+  // dayOfWeek: 0=Sun,1=Mon,...,6=Sat
+  // days until Saturday = 6 - dayOfWeek (or 7 if today is Sunday)
+  const dow = today.getDay();
+  const daysUntilSaturday = dow === 0 ? 6 : (6 - dow);
+  if (days <= daysUntilSaturday) return 'soon'; // this week
+  if (days <= 13) return 'ok';  // next week (Mon-Sun after this one)
   return 'chill';
 }
 function countdown(a) {
