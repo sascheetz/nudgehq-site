@@ -114,6 +114,9 @@
     border-radius: 10px;
     padding: 14px;
     margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     transition: box-shadow 0.2s;
   }
   .a-card.done { opacity: 0.42; }
@@ -124,11 +127,10 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 8px;
     gap: 8px;
   }
   .course-tag {
-    font-size: 0.56rem;
+    font-size: 0.62rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -137,9 +139,9 @@
     white-space: nowrap;
   }
   .urgency-pill {
-    font-size: 0.54rem;
+    font-size: 0.62rem;
     font-weight: 500;
-    padding: 3px 8px;
+    padding: 3px 9px;
     border-radius: 20px;
     white-space: nowrap;
     flex-shrink: 0;
@@ -152,16 +154,17 @@
 
   .card-title {
     font-family: var(--head);
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 500;
     line-height: 1.35;
     color: var(--ink);
-    margin-bottom: 6px;
   }
-  .card-due {
-    font-size: 0.62rem;
+  .card-meta {
+    font-size: 0.7rem;
     color: var(--sub);
-    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
   .due-miss { color: var(--missing); font-weight: 500; }
   .due-fire { color: var(--fire);    font-weight: 500; }
@@ -169,30 +172,23 @@
   .due-ok   { color: var(--ok); }
 
   /* ── Submission type ── */
-  .sub-section {
-    border-top: 1px solid var(--border);
-    padding-top: 10px;
-    margin-bottom: 12px;
-  }
+  /* Hidden once set — only shows when type not yet chosen */
+  .sub-section { }
+  .sub-section.hidden { display: none; }
   .sub-label {
-    font-size: 0.56rem;
+    font-size: 0.58rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin-bottom: 7px;
+    margin-bottom: 6px;
     font-weight: 600;
   }
-  .sub-btns {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 8px;
-  }
+  .sub-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
   .sub-btn {
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 5px 11px;
+    padding: 4px 10px;
     font-family: var(--sans);
     font-size: 0.62rem;
     color: var(--sub);
@@ -203,35 +199,29 @@
   .sub-btn:hover { border-color: var(--check); color: var(--check); }
   .sub-btn.active { background: var(--check); color: white; border-color: var(--check); }
   .sub-note-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 7px 10px;
-    font-family: var(--sans);
-    font-size: 0.62rem;
-    color: var(--ink);
-    outline: none;
-    display: none;
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-family: var(--sans);
+    font-size: 0.62rem; color: var(--ink); outline: none; display: none;
   }
   .sub-note-input.show { display: block; }
   .sub-note-input:focus { border-color: var(--check); }
 
+  /* Sub type badge — shown once type is set */
+  .sub-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.65rem; color: var(--sub);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 3px 9px; cursor: pointer;
+  }
+  .sub-badge:hover { border-color: var(--check); color: var(--check); }
+
   /* ── Done button ── */
   .card-actions { display: flex; gap: 8px; }
   .done-btn {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 9px;
-    font-family: var(--sans);
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: var(--sub);
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 7px; padding: 8px; font-family: var(--sans);
+    font-size: 0.68rem; font-weight: 500; color: var(--sub);
+    cursor: pointer; transition: all 0.15s; text-align: center;
   }
   .done-btn:hover { border-color: var(--check); color: var(--check); background: #eef7f3; }
   .done-btn.checked { background: #eef7f3; color: var(--check); border-color: #b0d8c8; }
