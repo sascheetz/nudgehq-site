@@ -73,6 +73,7 @@
   .btn:active { transform: scale(0.98); }
   .btn-primary   { background: var(--accent);  color: #fff; }
   .btn-secondary { background: var(--surface2);color: var(--subink); border: 1px solid var(--border); }
+  .btn-sent { background: #eef7f3 !important; color: var(--chill) !important; border-color: #b0d8c8 !important; }
   .btn-purple    { background: var(--missing); color: #fff; }
   .btn-orange    { background: var(--student); color: #fff; }
   .btn-primary:hover, .btn-purple:hover, .btn-orange:hover { opacity: 0.85; }
@@ -315,7 +316,9 @@
   <!-- Actions -->
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
-    <button class="btn btn-primary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Refresh Assignments</button>
+    <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Refresh via API</button>
+    <button class="btn btn-secondary" onclick="window.sendGeneralReminder && window.sendGeneralReminder()">📲 Send General Reminder</button>
     <button class="btn btn-secondary" onclick="window.loadDemo && window.loadDemo()">Try Demo Data</button>
   </div>
 
@@ -398,6 +401,52 @@
   </div>
 </div>
 
+<!-- ═══ BOOKMARK MODAL ═══ -->
+<div class="modal-bg" id="bookmark-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('bookmark-modal')">✕ Close</button>
+    <h2>Bookmark Automation</h2>
+    <p class="modal-sub">Open both Canvas JSON URLs at once with a single click using a JavaScript bookmarklet. Takes 2 minutes to set up.</p>
+
+    <div class="step"><div class="sn">1</div><div class="sb">
+      <strong>Create a new bookmark in Chrome</strong>
+      <p>Right-click the bookmarks bar → <strong>Add page</strong> (or press ⌘ + D anywhere).</p>
+    </div></div>
+
+    <div class="step"><div class="sn">2</div><div class="sb">
+      <strong>Name it "Get Canvas Data"</strong>
+      <p>In the Name field type: <code>Get Canvas Data</code></p>
+    </div></div>
+
+    <div class="step"><div class="sn">3</div><div class="sb">
+      <strong>Paste this as the URL</strong>
+      <p>Delete whatever is in the URL field and paste this entire block:</p>
+      <pre>javascript:(function(){window.open('https://lakota.instructure.com/api/v1/users/self/upcoming_events?per_page=50','_blank');setTimeout(function(){window.open('https://lakota.instructure.com/api/v1/users/self/missing_submissions?filter[]=submittable&per_page=50','_blank');},500);})();</pre>
+    </div></div>
+
+    <div class="step"><div class="sn">4</div><div class="sb">
+      <strong>Click Save</strong>
+      <p>The bookmark now appears in your bookmarks bar.</p>
+    </div></div>
+
+    <div class="step"><div class="sn">5</div><div class="sb">
+      <strong>How to use it daily</strong>
+      <p>While logged into Canvas in Chrome:</p>
+      <ol style="font-size:0.62rem;color:var(--subink);line-height:1.8;margin-top:6px;padding-left:16px">
+        <li>Click the <strong>Get Canvas Data</strong> bookmark</li>
+        <li>Two tabs open — each showing JSON data</li>
+        <li>In each tab press <strong>⌘ + S</strong> to save</li>
+        <li>Save as <strong>upcoming.json</strong> and <strong>missing.json</strong></li>
+        <li>Come back to the dashboard and load the files</li>
+      </ol>
+    </div></div>
+
+    <div class="callout c-blue">💡 <strong>Tip:</strong> Keep a folder on your Desktop called "Canvas Data" and always save the files there. That way they're easy to find when you load them into the dashboard.</div>
+
+    <button class="btn btn-primary" onclick="closeModal('bookmark-modal')">Got it</button>
+  </div>
+</div>
+
 <!-- ═══ FIREBASE MODAL ═══ -->
 <div class="modal-bg" id="firebase-modal">
   <div class="modal">
@@ -448,10 +497,10 @@
   <div class="modal">
     <button class="modal-close" onclick="closeModal('twilio-modal')">✕ Close</button>
     <h2>Twilio SMS Setup</h2>
-    <p class="modal-sub">One-time setup, ~10 minutes. Free trial included.</p>
-    <div class="step"><div class="sn">1</div><div class="sb"><strong>Create a free account</strong><p><a href="https://www.twilio.com/try-twilio" target="_blank">twilio.com/try-twilio</a> — no credit card needed.</p></div></div>
-    <div class="step"><div class="sn">2</div><div class="sb"><strong>Get a free phone number</strong><p>Console → Phone Numbers → Manage → Buy a Number. Filter by SMS.</p></div></div>
-    <div class="step"><div class="sn">3</div><div class="sb"><strong>Verify his number (trial only)</strong><p>Phone Numbers → Verified Caller IDs → add his number. One-time confirmation code.</p></div></div>
+    <p class="modal-sub">One-time setup, ~10 minutes. A local phone number costs ~$1.15/month — no business registration required.</p>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>Create a free Twilio account</strong><p><a href="https://www.twilio.com/try-twilio" target="_blank">twilio.com/try-twilio</a> — no credit card needed for the trial.</p></div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>Get a local phone number (~$1.15/mo)</strong><p>Console → Phone Numbers → Manage → Buy a Number. Filter by SMS. Choose a <strong>local 10-digit number</strong> — do NOT choose a toll-free 800 number as those require business registration. A local number works immediately with no extra paperwork.</p></div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>Verify his number (trial only)</strong><p>During the free trial, Twilio can only text numbers you've verified. Go to Phone Numbers → Verified Caller IDs → add his number. He'll get a one-time confirmation code. Once you add the $1.15/mo local number this step is no longer needed.</p></div></div>
     <div class="step"><div class="sn">4</div><div class="sb"><strong>Copy Account SID and Auth Token</strong><p>Both on your <a href="https://console.twilio.com" target="_blank">Twilio Console</a> homepage.</p><code>SID: ACxxxxxxxxxxxxxxxxxxxx</code></div></div>
     <div class="callout c-blue">🔒 Credentials stay in your browser only — sent directly to Twilio when you tap a nudge button.</div>
     <button class="btn btn-primary" onclick="closeModal('twilio-modal')">Got it</button>
@@ -494,11 +543,29 @@ Query: filter[]=submittable</pre></div></div>
     <div class="s-section">
       <div class="s-label">Canvas Connection</div>
       <div class="canvas-domain">🏫 lakota.instructure.com <span>● confirmed</span></div>
+
+      <!-- Method 1: Load from saved JSON files -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
+        <div style="font-size:0.62rem;font-weight:600;color:var(--subink);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">📂 Load from Saved Files</div>
+        <div class="field">
+          <label>Upcoming Assignments JSON</label>
+          <input type="file" id="file-upcoming" accept=".json" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;font-family:var(--mono);font-size:0.62rem;color:var(--ink);width:100%;">
+        </div>
+        <div class="field">
+          <label>Missing Submissions JSON</label>
+          <input type="file" id="file-missing" accept=".json" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;font-family:var(--mono);font-size:0.62rem;color:var(--ink);width:100%;">
+        </div>
+        <button class="btn btn-primary" onclick="window.loadFromFiles && window.loadFromFiles()">📂 Load from Files</button>
+        <p class="hint" style="margin-top:6px">Save JSON from Canvas while logged in. <button class="ilink" onclick="openModal('json-guide-modal')">How to get these files →</button></p>
+      </div>
+
+      <!-- Method 2: Live API -->
+      <div style="font-size:0.58rem;color:var(--muted);text-align:center;margin:4px 0">— or connect live —</div>
       <div class="field"><label>Proxy URL</label><input type="text" id="proxy-url" placeholder="https://your-proxy.up.railway.app"></div>
       <div class="field"><label>Student API Token</label><input type="password" id="api-token" placeholder="Paste token from Canvas settings…"></div>
       <div class="field"><label>Token Expiry Date</label><input type="date" id="token-expiry" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-family:var(--mono);font-size:0.63rem;color:var(--ink);outline:none;width:100%;"></div>
       <div class="field"><label>Student name (for texts)</label><input type="text" id="student-name" placeholder="e.g. Ethan"></div>
-      <button class="btn btn-primary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Load from Canvas API</button>
+      <button class="btn btn-secondary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Load from Canvas API</button>
       <p class="hint">Token: Canvas → Account → Settings → Approved Integrations → + New Access Token. <button class="ilink" onclick="openModal('token-modal')">Guide →</button></p>
     </div>
 
@@ -518,9 +585,52 @@ Query: filter[]=submittable</pre></div></div>
       <div class="field"><label>Auth Token</label><input type="password" id="tw-token" placeholder="your auth token"></div>
       <div class="field"><label>Your Twilio Number</label><input type="tel" id="tw-from" placeholder="+15551234567"></div>
       <div class="field"><label>His Phone Number</label><input type="tel" id="tw-to" placeholder="+15559876543"></div>
-      <p class="hint"><button class="ilink" onclick="openModal('twilio-modal')">Twilio setup guide →</button></p>
+      <p class="hint"><button class="ilink" onclick="openModal('twilio-modal')">Twilio setup guide →</button> · Local number ~$1.15/mo, no business registration needed.</p>
       <p class="hint" style="margin-top:8px;color:var(--chill)">🔒 All credentials auto-save in your browser. <button class="ilink" style="color:var(--muted)" onclick="clearCreds()">Clear saved data →</button></p>
     </div>
+  </div>
+</div>
+
+<!-- JSON Guide Modal -->
+<div class="modal-bg" id="json-guide-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('json-guide-modal')">✕ Close</button>
+    <h2>Getting Canvas JSON Files</h2>
+    <p class="modal-sub">While logged into Canvas, you can download your assignment data as JSON files. No API token needed — your browser session handles authentication.</p>
+
+    <div class="step"><div class="sn">1</div><div class="sb">
+      <strong>Log into Canvas</strong>
+      <p>Go to <a href="https://lakota.instructure.com" target="_blank">lakota.instructure.com</a> and log in with his student account.</p>
+    </div></div>
+
+    <div class="step"><div class="sn">2</div><div class="sb">
+      <strong>Get upcoming assignments</strong>
+      <p>Paste this URL into the address bar and press Enter:</p>
+      <code>https://lakota.instructure.com/api/v1/users/self/upcoming_events?per_page=50</code>
+      <p style="margin-top:6px">You'll see raw JSON in the browser. Press <strong>⌘ + S</strong> and save as <strong>upcoming.json</strong></p>
+    </div></div>
+
+    <div class="step"><div class="sn">3</div><div class="sb">
+      <strong>Get missing assignments</strong>
+      <p>Paste this URL into the address bar:</p>
+      <code>https://lakota.instructure.com/api/v1/users/self/missing_submissions?filter[]=submittable&per_page=50</code>
+      <p style="margin-top:6px">Press <strong>⌘ + S</strong> and save as <strong>missing.json</strong></p>
+    </div></div>
+
+    <div class="step"><div class="sn">4</div><div class="sb">
+      <strong>Load into the dashboard</strong>
+      <p>Come back here, click the file pickers above, select your saved files, and click <strong>Load from Files</strong>.</p>
+    </div></div>
+
+    <div class="callout c-green">✅ Do this once a day (morning works well) to keep the dashboard current. No token or proxy needed.</div>
+
+    <div class="divider"></div>
+
+    <div class="step"><div class="sn">★</div><div class="sb">
+      <strong>Automate with a bookmark</strong>
+      <p>You can open both URLs at once with a single browser bookmark. See the automation guide below.</p>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="closeModal('json-guide-modal');openModal('bookmark-modal')">📖 Bookmark Automation Guide →</button>
+    </div></div>
   </div>
 </div>
 
@@ -859,18 +969,54 @@ async function enrichCourseNames(token) {
 function off(d,h,m) { const x=new Date(); x.setDate(x.getDate()+d); x.setHours(h,m,0,0); return x; }
 window.loadDemo = function() {
   assignments = [
-    { id:'d1', title:'Algebra Ch. 7 Problem Set',          course:'Math 10',    due:off(-3,23,59), status:'missing',  points:20,  source:'api' },
-    { id:'d2', title:'Reading Response — Of Mice and Men', course:'English 10', due:off(-1,8,0),   status:'missing',  points:15,  source:'api' },
-    { id:'d3', title:'Lab Report: Photosynthesis',         course:'Biology',    due:off(0,23,59),  status:'upcoming', points:50,  source:'api' },
-    { id:'d4', title:'Spanish Vocab Quiz (Unit 5)',        course:'Spanish II', due:off(1,10,0),   status:'upcoming', points:25,  source:'api' },
-    { id:'d5', title:'History Essay Outline',              course:'US History', due:off(5,23,59),  status:'upcoming', points:30,  source:'api' },
-    { id:'d6', title:'Art Project — Self Portrait',       course:'Studio Art', due:off(10,23,59), status:'upcoming', points:100, source:'api' },
+    // ── Graded Zero (never submitted, teacher graded as 0) ──
+    { id:'d1',  title:'Civil War Causes — DBQ Essay',           course:'7th Grade Social Studies', due:off(-12,23,59), status:'zeroed',  points:50,  grade:'0',  source:'api' },
+    { id:'d2',  title:'Cells & Organelles Diagram',             course:'7th Grade Life Science',   due:off(-8,23,59),  status:'zeroed',  points:30,  grade:'0',  source:'api' },
+
+    // ── Officially Missing (past due, not submitted) ──
+    { id:'d3',  title:'Chapter 9 Reading Response',             course:'7th Grade ELA',            due:off(-5,23,59),  status:'missing', points:20,  source:'api' },
+    { id:'d4',  title:'Fractions & Decimals Practice — Unit 4', course:'7th Grade Math',           due:off(-3,8,0),    status:'missing', points:15,  source:'api' },
+    { id:'d5',  title:'Spanish Vocabulary Flash Cards',         course:'Spanish I',                due:off(-1,23,59),  status:'missing', points:10,  source:'api' },
+
+    // ── Due Today ──
+    { id:'d6',  title:'Persuasive Essay — First Draft',         course:'7th Grade ELA',            due:off(0,23,59),   status:'upcoming', points:40, source:'api' },
+    { id:'d7',  title:'Matter & Energy — Lab Worksheet',        course:'7th Grade Life Science',   due:off(0,8,0),     status:'upcoming', points:20, source:'api' },
+
+    // ── Due Tomorrow ──
+    { id:'d8',  title:'Pythagorean Theorem — Problem Set',      course:'7th Grade Math',           due:off(1,23,59),   status:'upcoming', points:25, source:'api' },
+
+    // ── This Week ──
+    { id:'d9',  title:'Colonial America — Compare & Contrast',  course:'7th Grade Social Studies', due:off(2,23,59),   status:'upcoming', points:35, source:'api' },
+    { id:'d10', title:'Spanish I — Chapter 4 Workbook',         course:'Spanish I',                due:off(3,23,59),   status:'upcoming', points:20, source:'api' },
+
+    // ── Next Week ──
+    { id:'d11', title:'Ecosystems Research Project',            course:'7th Grade Life Science',   due:off(7,23,59),   status:'upcoming', points:100, source:'api' },
+    { id:'d12', title:'The Outsiders — Book Report',            course:'7th Grade ELA',            due:off(8,23,59),   status:'upcoming', points:60,  source:'api' },
+    { id:'d13', title:'Integers & Rational Numbers — Unit Test', course:'7th Grade Math',          due:off(9,23,59),   status:'upcoming', points:50,  source:'api' },
+    { id:'d14', title:'PE Fitness Log — Week 6',                course:'Physical Education',       due:off(10,23,59),  status:'upcoming', points:10,  source:'api' },
+
+    // ── Later ──
+    { id:'d15', title:'Art Portfolio — Mixed Media Piece',      course:'Art',                      due:off(14,23,59),  status:'upcoming', points:75,  source:'api' },
+    { id:'d16', title:'Revolutionary War — Timeline Project',   course:'7th Grade Social Studies', due:off(18,23,59),  status:'upcoming', points:40,  source:'api' },
   ];
-  // Simulate he checked one off
-  studentChecked = { d3: true };
-  document.getElementById('last-sync').textContent = 'Demo data loaded';
+
+  // Simulate parent confirmed these as done
+  parentDone = { d17: true };
+
+  // Simulate student checked off one upcoming assignment
+  studentChecked = { d8: true };
+
+  // Simulate submission types set by student
+  studentSubTypes = {
+    d6:  { type: 'canvas',   note: '' },
+    d8:  { type: 'paper',    note: '' },
+    d9:  { type: 'external', note: 'Google Docs' },
+    d10: { type: 'both',     note: 'Quizlet + Canvas' },
+  };
+
+  document.getElementById('last-sync').textContent = 'Demo data loaded · 7th Grade Student';
   renderAll();
-  showToast('Demo loaded — check the "He Checked Off" filter!', 'ok');
+  showToast('Demo loaded — 16 assignments across 7 courses', 'ok');
 };
 
 // ══════════════════════════════════════
