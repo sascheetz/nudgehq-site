@@ -7,24 +7,24 @@
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>My Assignments</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f0e8;
-    --surface: #fdfaf4;
-    --border: #e0d8c8;
-    --ink: #1c1814;
-    --sub: #6b6358;
-    --muted: #b0a898;
-    --fire: #c0392b;
-    --soon: #c96a1a;
-    --ok: #a08010;
-    --chill: #2a7a56;
-    --missing: #7b2d8b;
-    --accent: #3d5a99;
-    --check: #2a7a56;
-    --sans: 'Inter', sans-serif;
-    --head: 'DM Sans', sans-serif;
+    --bg:      #ffffff;
+    --surface: #ffffff;
+    --border:  #e2e6ea;
+    --ink:     #1a1d23;
+    --sub:     #4a5568;
+    --muted:   #9aa5b4;
+    --fire:    #e53e3e;
+    --soon:    #dd6b20;
+    --ok:      #3182ce;
+    --chill:   #38a169;
+    --missing: #805ad5;
+    --accent:  #5a67d8;
+    --check:   #38a169;
+    --sans:    'Inter', sans-serif;
+    --head:    'Inter', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -32,7 +32,7 @@
     background: var(--bg);
     color: var(--ink);
     font-family: var(--sans);
-    font-size: 13px;
+    font-size: 16px;
     min-height: 100vh;
     padding-bottom: 100px;
   }
@@ -58,22 +58,22 @@
     font-weight: 500;
     color: var(--ink);
   }
-  .date-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.08em; }
+  .date-label { font-size: 0.80rem; color: var(--muted); letter-spacing: 0.08em; }
   .settings-btn {
     background: none; border: 1px solid var(--border); border-radius: 8px;
-    padding: 6px 10px; color: var(--sub); cursor: pointer; font-size: 0.75rem;
+    padding: 6px 10px; color: var(--sub); cursor: pointer; font-size: 0.95rem;
   }
 
   /* Progress */
   .progress-wrap { display: flex; align-items: center; gap: 10px; }
   .progress-bar  { flex: 1; height: 5px; background: var(--border); border-radius: 10px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--check); border-radius: 10px; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); width: 0%; }
-  .progress-label { font-size: 0.6rem; color: var(--sub); white-space: nowrap; min-width: 40px; text-align: right; }
+  .progress-label { font-size: 0.80rem; color: var(--sub); white-space: nowrap; min-width: 40px; text-align: right; }
 
   /* ── Setup banner ── */
   #setup-banner {
     background: #fffbf0; border-bottom: 1px solid #ede0b0;
-    padding: 12px 16px; font-size: 0.62rem; color: #7a6010;
+    padding: 12px 16px; font-size: 0.82rem; color: #7a6010;
     line-height: 1.65; display: none;
   }
   #setup-banner.show { display: block; }
@@ -83,17 +83,17 @@
   #config-panel.show { display: block; }
   #config-panel h3 { font-family: var(--head); font-size: 1rem; margin-bottom: 12px; font-weight: 500; }
   .cfg-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-  .cfg-field label { font-size: 0.6rem; color: var(--sub); }
+  .cfg-field label { font-size: 0.80rem; color: var(--sub); }
   .cfg-field input {
     background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: 9px 12px; font-family: var(--sans); font-size: 0.65rem;
+    padding: 9px 12px; font-family: var(--sans); font-size: 0.85rem;
     color: var(--ink); outline: none; width: 100%;
   }
   .cfg-field input:focus { border-color: var(--check); }
   .cfg-field input::placeholder { color: var(--muted); }
   .cfg-save {
     background: var(--ink); color: var(--bg); border: none; border-radius: 7px;
-    padding: 10px; font-family: var(--sans); font-size: 0.65rem; width: 100%;
+    padding: 10px; font-family: var(--sans); font-size: 0.85rem; width: 100%;
     cursor: pointer; font-weight: 500;
   }
   .cfg-hint { font-size: 0.57rem; color: var(--muted); line-height: 1.6; margin-top: 8px; }
@@ -101,7 +101,7 @@
   /* ── Section labels ── */
   .section-head {
     padding: 16px 12px 6px;
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--muted);
@@ -143,7 +143,7 @@
     gap: 8px;
   }
   .course-tag {
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -152,7 +152,7 @@
     white-space: nowrap;
   }
   .urgency-pill {
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     font-weight: 500;
     padding: 3px 9px;
     border-radius: 20px;
@@ -169,18 +169,18 @@
   .card-title {
     font-family: var(--head);
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1.35;
     color: var(--ink);
   }
   .card-meta {
-    font-size: 0.7rem;
+    font-size: 0.90rem;
     color: var(--sub);
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
-  .card-due { font-size: 0.72rem; color: var(--sub); }
+  .card-due { font-size: 0.92rem; color: var(--sub); }
   .due-zero { color: var(--fire);    font-weight: 500; }
   .due-miss { color: var(--missing); font-weight: 500; }
   .due-fire { color: var(--fire);    font-weight: 500; }
@@ -192,7 +192,7 @@
   .sub-section { }
   .sub-section.hidden { display: none; }
   .sub-label {
-    font-size: 0.58rem;
+    font-size: 0.78rem;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -206,7 +206,7 @@
     border-radius: 20px;
     padding: 4px 10px;
     font-family: var(--sans);
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     color: var(--sub);
     cursor: pointer;
     transition: all 0.15s;
@@ -217,7 +217,7 @@
   .sub-note-input {
     width: 100%; background: var(--bg); border: 1px solid var(--border);
     border-radius: 6px; padding: 6px 10px; font-family: var(--sans);
-    font-size: 0.62rem; color: var(--ink); outline: none; display: none;
+    font-size: 0.82rem; color: var(--ink); outline: none; display: none;
   }
   .sub-note-input.show { display: block; }
   .sub-note-input:focus { border-color: var(--check); }
@@ -225,7 +225,7 @@
   /* Sub type badge — shown once type is set */
   .sub-badge {
     display: inline-flex; align-items: center; gap: 4px;
-    font-size: 0.65rem; color: var(--sub);
+    font-size: 0.85rem; color: var(--sub);
     background: var(--bg); border: 1px solid var(--border);
     border-radius: 6px; padding: 3px 9px; cursor: pointer;
   }
@@ -236,7 +236,7 @@
   .done-btn {
     flex: 1; background: var(--bg); border: 1px solid var(--border);
     border-radius: 7px; padding: 8px; font-family: var(--sans);
-    font-size: 0.68rem; font-weight: 500; color: var(--sub);
+    font-size: 0.87rem; font-weight: 500; color: var(--sub);
     cursor: pointer; transition: all 0.15s; text-align: center;
   }
   .done-btn:hover { border-color: var(--check); color: var(--check); background: #eef7f3; }
@@ -792,6 +792,11 @@ async function init() {
 // Listen for bridge script data injection
 window.addEventListener('nhq_data_ready', () => {
   console.log('[Nudge HQ] Bridge data received, loading...');
+  setTimeout(() => loadCanvas(), 100);
+});
+
+// Listen for bridge data injection
+window.addEventListener('nhq_data_ready', () => {
   setTimeout(() => loadCanvas(), 100);
 });
 
