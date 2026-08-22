@@ -299,6 +299,12 @@
     <p>Lakota Canvas · Parent Dashboard</p>
   </div>
 
+  <!-- Child switcher -->
+  <div class="s-section" id="child-switcher-section" style="display:none">
+    <div class="s-label">Viewing</div>
+    <div id="child-btns" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+
   <!-- Stats -->
   <div class="s-section">
     <div class="s-label">At a Glance</div>
@@ -317,7 +323,7 @@
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
-    <button class="btn btn-secondary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Refresh via API</button>
+
     <button class="btn btn-secondary" onclick="window.sendGeneralReminder && window.sendGeneralReminder()">📲 Send General Reminder</button>
     <button class="btn btn-secondary" onclick="window.loadDemo && window.loadDemo()">Try Demo Data</button>
   </div>
@@ -1405,15 +1411,47 @@ window.clearCreds = function() {
 };
 
 // ── Load from Chrome Extension ──
-window.loadFromExtension = function() {
-  const upcomingRaw = JSON.parse(localStorage.getItem('nhq_upcoming_raw') || '[]');
-  const missingRaw  = JSON.parse(localStorage.getItem('nhq_missing_raw')  || '[]');
-  const plannerRaw  = JSON.parse(localStorage.getItem('nhq_planner_raw')  || '[]');
-  const courseMap   = JSON.parse(localStorage.getItem('nhq_course_map')   || '{}');
-  const syncedAt    = localStorage.getItem('nhq_synced_at');
+let activeUserId = null;
+
+window.loadFromExtension = function(userId) {
+  // Find available users
+  const userIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+
+  if (!userIds.length) {
+    showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
+    return;
+  }
+
+  // Use specified userId or default to first available
+  activeUserId = userId || userIds[0];
+
+  // Update child switcher UI
+  const switcherSection = document.getElementById('child-switcher-section');
+  const childBtns       = document.getElementById('child-btns');
+  if (userIds.length > 1 && switcherSection) {
+    switcherSection.style.display = 'block';
+    childBtns.innerHTML = '';
+    userIds.forEach(uid => {
+      const name = localStorage.getItem('nhq_' + uid + '_name') || 'Student ' + uid;
+      const btn  = document.createElement('button');
+      btn.className = 'btn ' + (uid === activeUserId ? 'btn-primary' : 'btn-secondary');
+      btn.textContent = name;
+      btn.onclick = () => window.loadFromExtension(uid);
+      childBtns.appendChild(btn);
+    });
+  }
+
+  const prefix       = 'nhq_' + activeUserId + '_';
+  const upcomingRaw  = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw')  || '[]');
+  const missingRaw   = JSON.parse(localStorage.getItem(prefix + 'missing_raw')   || '[]');
+  const plannerRaw   = JSON.parse(localStorage.getItem(prefix + 'planner_raw')   || '[]');
+  const courseMap    = JSON.parse(localStorage.getItem(prefix + 'course_map')    || '{}');
+  const submittedIds = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids') || '[]'));
+  const syncedAt     = localStorage.getItem(prefix + 'synced_at');
+  const studentName  = localStorage.getItem(prefix + 'name') || 'Student';
 
   if (!upcomingRaw.length && !missingRaw.length) {
-    showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
+    showToast('No data for ' + studentName + '. Have them log into Canvas and sync.', 'err');
     return;
   }
 
@@ -1445,6 +1483,8 @@ window.loadFromExtension = function() {
     if (!due || due < academicYearStart) return;
     const title = a.name || a.title || e.title || '';
     if (!title) return;
+    // Skip if he already submitted this assignment
+    if (submittedIds.has(id)) return;
     seen.add(id);
     assignments.push({
       id, title,
