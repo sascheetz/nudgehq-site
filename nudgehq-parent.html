@@ -1404,12 +1404,24 @@ window.clearCreds = function() {
   showToast('Credentials cleared.', '');
 };
 
-// Auto-load Canvas if token was restored
+// Auto-load from extension data on page load
 document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('nhq_cred_api-token');
-  if (token) {
-    setTimeout(() => window.loadCanvas && window.loadCanvas(), 500);
+  const hasExtData = localStorage.getItem('nhq_upcoming_raw') || localStorage.getItem('nhq_missing_raw');
+  if (hasExtData) {
+    setTimeout(() => window.loadFromExtension && window.loadFromExtension(), 300);
+  } else {
+    // Fall back to Canvas API token if available
+    const token = localStorage.getItem('nhq_cred_api-token');
+    if (token) {
+      setTimeout(() => window.loadCanvas && window.loadCanvas(), 500);
+    }
   }
+});
+
+// Listen for bridge script data injection
+window.addEventListener('nhq_data_ready', () => {
+  console.log('[Nudge HQ] Bridge data received, loading...');
+  setTimeout(() => window.loadFromExtension && window.loadFromExtension(), 100);
 });
 </script>
 <script>

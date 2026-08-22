@@ -317,7 +317,7 @@
 </header>
 
 <div id="setup-banner" class="show">
-  ⚠️ Tap <strong>⚙ Settings</strong> to connect your Canvas account.
+  ⚠️ Install the Nudge HQ Chrome extension and sync Canvas to load your assignments.
 </div>
 
 <div id="config-panel">
@@ -459,176 +459,95 @@ async function fbWrite(path, val) {
 
 // ── Canvas API ──
 async function loadCanvas() {
-  if (!cfg.token) { showEmpty(); return; }
   showLoading(true);
-  try {
-    const [missingRes, upRes, plannerRes] = await Promise.all([
-      fetch(PROXY + '/api/v1/users/self/missing_submissions?filter[]=submittable&per_page=50',
-        { headers: { 'Authorization': 'Bearer ' + cfg.token } }),
-      fetch(PROXY + '/api/v1/users/self/upcoming_events?per_page=50',
-        { headers: { 'Authorization': 'Bearer ' + cfg.token } }),
-      fetch(PROXY + '/api/v1/planner/items?per_page=50',
-        { headers: { 'Authorization': 'Bearer ' + cfg.token } }),
-    ]);
 
-    const missingRaw  = missingRes.ok  ? await missingRes.json() : [];
-    const upcomingRaw = upRes.ok       ? await upRes.json()      : [];
-    const plannerRaw  = plannerRes.ok  ? await plannerRes.json() : [];
+  const upcomingRaw = JSON.parse(localStorage.getItem('nhq_upcoming_raw') || '[]');
+  const missingRaw  = JSON.parse(localStorage.getItem('nhq_missing_raw')  || '[]');
+  const plannerRaw  = JSON.parse(localStorage.getItem('nhq_planner_raw')  || '[]');
+  const courseMap   = JSON.parse(localStorage.getItem('nhq_course_map')   || '{}');
+  const syncedAt    = localStorage.getItem('nhq_synced_at');
 
-    const seen = new Set();
-    assignments = [];
-
-    missingRaw.forEach(a => {
-      const id = String(a.id);
-      if (seen.has(id)) return;
-      seen.add(id);
-      assignments.push({ id, title: a.name||'Untitled', course: 'Course '+a.course_id, due: a.due_at?new Date(a.due_at):null, status:'missing' });
-    });
-
-    const academicStart = new Date(new Date().getMonth()>=7 ? new Date().getFullYear() : new Date().getFullYear()-1, 7, 1);
-    upcomingRaw.filter(e => e.type==='Assignment'||e.assignment).forEach(e => {
-      const a   = e.assignment || e;
-      const id  = String(a.id || e.id);
-      if (seen.has(id)) return;
-      const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
-      if (!due || due < academicStart) return;
-      seen.add(id);
-      assignments.push({ id, title: a.name||a.title||e.title||'Untitled', course: 'Course '+(a.course_id||''), due, status:'upcoming' });
-    });
-
-    // Enrich course names
-    try {
-      const cr = await fetch(PROXY + '/api/v1/users/self/courses?enrollment_state=active&per_page=50',
-        { headers: { 'Authorization': 'Bearer ' + cfg.token } });
-      if (cr.ok) {
-        const courses = await cr.json();
-        const map = {};
-        courses.forEach(c => { map[String(c.id)] = c.name || c.course_code || 'Course '+c.id; });
-        assignments.forEach(a => {
-          const cid = String(a.course).replace(/^Course\s+/i,'').trim();
-          if (map[cid]) a.course = map[cid];
-        });
-      }
-    } catch(e) {}
-
-    // ── Zero detection: graded as 0, never submitted ──
-    try {
-      const enrollRes = await fetch(PROXY + '/api/v1/users/self/enrollments?type[]=StudentEnrollment&state[]=active&per_page=50',
-        { headers: { 'Authorization': 'Bearer ' + cfg.token } });
-      if (enrollRes.ok) {
-        const enrollments = await enrollRes.json();
-        const courseIds   = enrollments.map(e => e.course_id).filter(Boolean);
-        const zeroChecks  = courseIds.map(cid =>
-          fetch(PROXY + '/api/v1/courses/' + cid + '/students/submissions?student_ids[]=self&workflow_state=graded&per_page=50&include[]=assignment',
-            { headers: { 'Authorization': 'Bearer ' + cfg.token } })
-        );
-        const zeroResults = await Promise.all(zeroChecks);
-        const seenIds = new Set(assignments.map(a => String(a.id)));
-        for (const res of zeroResults) {
-          if (!res.ok) continue;
-          const subs = await res.json();
-          subs.forEach(sub => {
-            const isZero         = sub.score === 0 || sub.score === null;
-            const neverSubmitted = !sub.submitted_at;
-            const wasGraded      = sub.grader_id && sub.grader_id > 0;
-            const zeroTitle      = sub.assignment ? (sub.assignment.name || sub.assignment.title) : null;
-            const due = sub.assignment && sub.assignment.due_at ? new Date(sub.assignment.due_at) : null;
-            // Skip assignments older than current academic year
-            const now2 = new Date();
-            const academicStart = new Date(now2.getMonth()>=7 ? now2.getFullYear() : now2.getFullYear()-1, 7, 1);
-            if (due && due < academicStart) return;
-            if (isZero && neverSubmitted && wasGraded && zeroTitle && !seenIds.has(String(sub.assignment_id))) {
-              seenIds.add(String(sub.assignment_id));
-              assignments.push({
-                id:     String(sub.assignment_id),
-                title:  zeroTitle,
-                course: String(sub.assignment ? sub.assignment.course_id : ''),
-                due,
-                status: 'zeroed',
-                grade:  sub.grade,
-                points: sub.assignment ? sub.assignment.points_possible : null,
-              });
-            }
-          });
-        }
-        // Enrich zeroed course names using active courses fetch
-        try {
-          const cr = await fetch(PROXY + '/api/v1/users/self/courses?enrollment_state=active&per_page=50',
-            { headers: { 'Authorization': 'Bearer ' + cfg.token } });
-          if (cr.ok) {
-            const courses = await cr.json();
-            const cmap = {};
-            courses.forEach(c => { cmap[String(c.id)] = c.name || c.course_code || ('Course ' + c.id); });
-            assignments.forEach(a => {
-              if (a.status === 'zeroed') {
-                const cid = String(a.course).replace(/^Course\s+/i,'').trim();
-                if (cmap[cid]) a.course = cmap[cid];
-                else if (cmap[a.course]) a.course = cmap[a.course];
-              }
-            });
-          }
-        } catch(e) { console.warn('Zero course enrich error:', e.message); }
-      }
-    } catch(e) { console.warn('Zero detection error:', e.message); }
-
-
-    // Also pull from planner — catches newly assigned work not yet in upcoming_events
-    plannerRaw.filter(p => p.plannable_type === 'assignment' && p.plannable).forEach(p => {
-      const id  = String(p.plannable_id);
-      if (seen.has(id)) return;
-      const due = p.plannable.due_at ? new Date(p.plannable.due_at) : (p.plannable_date ? new Date(p.plannable_date) : null);
-      if (!due || due < academicStart) return;
-      const title = p.plannable.title || p.plannable.name || '';
-      if (!title) return;
-      seen.add(id);
-      assignments.push({ id, title, course: 'Course ' + (p.course_id || ''), due, status: 'upcoming' });
-    });
-
-    // Filter out already graded/submitted assignments from upcoming list
-    try {
-      const enrollRes = await fetch(PROXY + '/api/v1/users/self/enrollments?type[]=StudentEnrollment&state[]=active&per_page=50',
-        { headers: { 'Authorization': 'Bearer ' + cfg.token } });
-      if (enrollRes.ok) {
-        const enrollments = await enrollRes.json();
-        const courseIds   = enrollments.map(e => e.course_id).filter(Boolean);
-        const gradedChecks = courseIds.map(cid =>
-          fetch(PROXY + '/api/v1/courses/' + cid + '/students/submissions?student_ids[]=self&workflow_state[]=graded&workflow_state[]=submitted&per_page=50',
-            { headers: { 'Authorization': 'Bearer ' + cfg.token } })
-        );
-        const gradedResults = await Promise.all(gradedChecks);
-        const gradedIds = new Set();
-        for (const res of gradedResults) {
-          if (!res.ok) continue;
-          const subs = await res.json();
-          subs.forEach(s => {
-            if (s.assignment_id && (s.workflow_state==='graded'||s.workflow_state==='submitted')) {
-              gradedIds.add(String(s.assignment_id));
-            }
-          });
-        }
-        const before = assignments.length;
-        assignments = assignments.filter(a => a.status!=='upcoming' || !gradedIds.has(String(a.id)));
-        const removed = before - assignments.length;
-        if (removed > 0) console.log('Filtered out', removed, 'graded/submitted assignments');
-      }
-    } catch(e) { console.warn('Graded filter error:', e.message); }
-
-    assignments.sort((a,b) => {
-      if (a.status==='zeroed'  && b.status!=='zeroed')   return -1;
-      if (b.status==='zeroed'  && a.status!=='zeroed')   return 1;
-      if (a.status==='missing' && b.status!=='missing')  return -1;
-      if (b.status==='missing' && a.status!=='missing')  return 1;
-      return (a.due||new Date(9e15))-(b.due||new Date(9e15));
-    });
-
-    renderCards();
-    showBanner(false);
-  } catch(e) {
-    showToast('Could not load Canvas: ' + e.message);
+  if (!upcomingRaw.length && !missingRaw.length && !plannerRaw.length) {
+    showBanner(true);
+    showLoading(false);
     showEmpty();
+    return;
   }
+
+  const now2 = new Date();
+  const academicStart = new Date(
+    now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1
+  );
+
+  const seen = new Set();
+  assignments = [];
+
+  // Process missing
+  missingRaw.forEach(a => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({
+      id, title: a.name || 'Untitled',
+      course: courseMap[String(a.course_id)] || 'Course ' + a.course_id,
+      due:    a.due_at ? new Date(a.due_at) : null,
+      status: 'missing', points: a.points_possible || null,
+    });
+  });
+
+  // Process upcoming
+  upcomingRaw.filter(e => e.type === 'Assignment' || e.assignment).forEach(e => {
+    const a   = e.assignment || e;
+    const id  = String(a.id || e.id);
+    if (seen.has(id)) return;
+    const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
+    if (!due || due < academicStart) return;
+    const title = a.name || a.title || e.title || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title,
+      course: courseMap[String(a.course_id || e.course_id)] || e.context_name || 'Course ' + (a.course_id || ''),
+      due, status: 'upcoming', points: a.points_possible || null,
+    });
+  });
+
+  // Process planner
+  plannerRaw.filter(p => p.plannable_type === 'assignment' && p.plannable).forEach(p => {
+    const id = String(p.plannable_id);
+    if (seen.has(id)) return;
+    const due = p.plannable.due_at ? new Date(p.plannable.due_at) : null;
+    if (!due || due < academicStart) return;
+    const title = p.plannable.title || p.plannable.name || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title,
+      course: courseMap[String(p.course_id)] || 'Course ' + (p.course_id || ''),
+      due, status: 'upcoming', points: p.plannable.points_possible || null,
+    });
+  });
+
+  // Dedup by title + date
+  const titleDueSet = new Set();
+  assignments = assignments.filter(a => {
+    const key = a.title.trim().toLowerCase() + '|' + (a.due ? a.due.toDateString() : 'nodue');
+    if (titleDueSet.has(key)) return false;
+    titleDueSet.add(key);
+    return true;
+  });
+
+  assignments.sort((a,b) => {
+    if (a.status==='missing'&&b.status!=='missing') return -1;
+    if (b.status==='missing'&&a.status!=='missing') return 1;
+    return (a.due||new Date(9e15))-(b.due||new Date(9e15));
+  });
+
+  showBanner(false);
   showLoading(false);
+  renderCards();
 }
+
 
 // ── Urgency ──
 function urgency(a) {
@@ -868,8 +787,13 @@ async function init() {
   await initFirebase();
   await loadCanvas();
   showLoading(false);
-  if (!cfg.token) { showBanner(true); document.getElementById('config-panel').classList.add('show'); }
 }
+
+// Listen for bridge script data injection
+window.addEventListener('nhq_data_ready', () => {
+  console.log('[Nudge HQ] Bridge data received, loading...');
+  setTimeout(() => loadCanvas(), 100);
+});
 
 init();
 </script>
