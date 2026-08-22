@@ -548,43 +548,12 @@ Query: filter[]=submittable</pre></div></div>
     <!-- Canvas -->
     <div class="s-section">
       <div class="s-label">Canvas Connection</div>
-      <div class="canvas-domain">🏫 lakota.instructure.com <span>● confirmed</span></div>
-
-      <!-- Method 1: Load from saved JSON files -->
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
-        <div style="font-size:0.62rem;font-weight:600;color:var(--subink);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em">📂 Load from Saved Files</div>
-        <div class="field">
-          <label>Upcoming Assignments JSON</label>
-          <input type="file" id="file-upcoming" accept=".json" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;font-family:var(--mono);font-size:0.62rem;color:var(--ink);width:100%;">
-        </div>
-        <div class="field">
-          <label>Missing Submissions JSON</label>
-          <input type="file" id="file-missing" accept=".json" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;font-family:var(--mono);font-size:0.62rem;color:var(--ink);width:100%;">
-        </div>
-        <button class="btn btn-primary" onclick="window.loadFromFiles && window.loadFromFiles()">📂 Load from Files</button>
-        <p class="hint" style="margin-top:6px">Save JSON from Canvas while logged in. <button class="ilink" onclick="openModal('json-guide-modal')">How to get these files →</button></p>
-      </div>
-
-      <!-- Method 2: Live API -->
-      <div style="font-size:0.58rem;color:var(--muted);text-align:center;margin:4px 0">— or connect live —</div>
-      <div class="field"><label>Proxy URL</label><input type="text" id="proxy-url" placeholder="https://your-proxy.up.railway.app"></div>
-      <div class="field"><label>Student API Token</label><input type="password" id="api-token" placeholder="Paste token from Canvas settings…"></div>
-      <div class="field"><label>Token Expiry Date</label><input type="date" id="token-expiry" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-family:var(--mono);font-size:0.63rem;color:var(--ink);outline:none;width:100%;"></div>
-      <div class="field"><label>Student name (for texts)</label><input type="text" id="student-name" placeholder="e.g. Ethan"></div>
-      <button class="btn btn-secondary" onclick="window.loadCanvas && window.loadCanvas()">🔄 Load from Canvas API</button>
-      <p class="hint">Token: Canvas → Account → Settings → Approved Integrations → + New Access Token. <button class="ilink" onclick="openModal('token-modal')">Guide →</button></p>
+      <div class="canvas-domain">🏫 lakota.instructure.com <span>● via extension</span></div>
+      <p class="hint" style="margin-top:8px">Data is synced automatically by the Nudge HQ Chrome extension. Open Canvas in Chrome, click the Nudge HQ icon, and click Sync Now.</p>
+      <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     </div>
 
-    <!-- Firebase -->
-    <div class="s-section">
-      <div class="s-label">Student Sync (Firebase)</div>
-      <div class="field"><label>Firebase Database URL</label><input type="url" id="fb-url" placeholder="https://your-project-default-rtdb.firebaseio.com"></div>
-      <div class="field"><label>Firebase API Key</label><input type="password" id="fb-key" placeholder="AIzaSy…"></div>
-      <button class="btn btn-primary" onclick="window.connectFirebase && window.connectFirebase()">🔗 Connect Firebase</button>
-      <p class="hint"><button class="ilink" onclick="openModal('firebase-modal')">Firebase setup guide →</button></p>
-    </div>
-
-    <!-- Twilio -->
+        <!-- Twilio -->
     <div class="s-section">
       <div class="s-label">Twilio SMS</div>
       <div class="field"><label>Account SID</label><input type="text" id="tw-sid" placeholder="ACxxxxxxxxxxxxxxxx"></div>
