@@ -391,6 +391,23 @@ function loadFromStorage() {
   renderCards();
 }
 
+// ── Date group label ──
+function dateGroupLabel(a) {
+  if (!a.due) return '📅 Upcoming';
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  const diff  = Math.round((due - today) / 86400000);
+  if (diff < 0)   return '⚠️ Overdue';
+  if (diff === 0) return '📅 Today';
+  if (diff === 1) return '📅 Tomorrow';
+  const dow = today.getDay();
+  const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
+  if (diff <= daysUntilFriday) return '📅 This Week';
+  if (diff <= daysUntilFriday + 7) return '📅 Next Week';
+  return '📅 Later';
+}
+
 // ── Render ──
 function renderCards() {
   const wrap = document.getElementById('card-wrap');
@@ -408,10 +425,22 @@ function renderCards() {
 
   document.getElementById('empty').style.display = total === 0 ? 'block' : 'none';
 
-  if (zeroed.length)   addSection(wrap, '🔴 Graded Zero', zeroed);
-  if (missing.length)  addSection(wrap, '⚠️ Overdue / Missing', missing);
-  if (upcoming.length) addSection(wrap, '📅 Upcoming', upcoming);
-  if (done.length)     addSection(wrap, '✓ Completed', done);
+  if (zeroed.length)  addSection(wrap, '🔴 Graded Zero', zeroed);
+  if (missing.length) addSection(wrap, '⚠️ Overdue / Missing', missing);
+
+  // Group upcoming by date label
+  if (upcoming.length) {
+    const groups = {};
+    const groupOrder = [];
+    upcoming.forEach(a => {
+      const lbl = dateGroupLabel(a);
+      if (!groups[lbl]) { groups[lbl] = []; groupOrder.push(lbl); }
+      groups[lbl].push(a);
+    });
+    groupOrder.forEach(lbl => addSection(wrap, lbl, groups[lbl]));
+  }
+
+  if (done.length) addSection(wrap, '✓ Completed', done);
 }
 
 function addSection(wrap, label, items) {
