@@ -1404,6 +1404,92 @@ window.clearCreds = function() {
   showToast('Credentials cleared.', '');
 };
 
+// ── Load from Chrome Extension ──
+window.loadFromExtension = function() {
+  const upcomingRaw = JSON.parse(localStorage.getItem('nhq_upcoming_raw') || '[]');
+  const missingRaw  = JSON.parse(localStorage.getItem('nhq_missing_raw')  || '[]');
+  const plannerRaw  = JSON.parse(localStorage.getItem('nhq_planner_raw')  || '[]');
+  const courseMap   = JSON.parse(localStorage.getItem('nhq_course_map')   || '{}');
+  const syncedAt    = localStorage.getItem('nhq_synced_at');
+
+  if (!upcomingRaw.length && !missingRaw.length) {
+    showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
+    return;
+  }
+
+  const now2 = new Date();
+  const academicYearStart = new Date(
+    now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1
+  );
+
+  const seen = new Set();
+  assignments = [];
+
+  missingRaw.forEach(a => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({
+      id, title: a.name || 'Untitled',
+      course: courseMap[String(a.course_id)] || 'Course ' + a.course_id,
+      due:    a.due_at ? new Date(a.due_at) : null,
+      status: 'missing', points: a.points_possible || null, source: 'api',
+    });
+  });
+
+  upcomingRaw.filter(e => e.type === 'Assignment' || e.assignment).forEach(e => {
+    const a   = e.assignment || e;
+    const id  = String(a.id || e.id);
+    if (seen.has(id)) return;
+    const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
+    if (!due || due < academicYearStart) return;
+    const title = a.name || a.title || e.title || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title,
+      course: courseMap[String(a.course_id || e.course_id)] || e.context_name || 'Course ' + (a.course_id || ''),
+      due, status: 'upcoming', points: a.points_possible || null, source: 'api',
+    });
+  });
+
+  plannerRaw.filter(p => p.plannable_type === 'assignment' && p.plannable).forEach(p => {
+    const id = String(p.plannable_id);
+    if (seen.has(id)) return;
+    const due = p.plannable.due_at ? new Date(p.plannable.due_at) : null;
+    if (!due || due < academicYearStart) return;
+    const title = p.plannable.title || p.plannable.name || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title,
+      course: courseMap[String(p.course_id)] || 'Course ' + (p.course_id || ''),
+      due, status: 'upcoming', points: p.plannable.points_possible || null, source: 'api',
+    });
+  });
+
+  const titleDueSet = new Set();
+  assignments = assignments.filter(a => {
+    const key = a.title.trim().toLowerCase() + '|' + (a.due ? a.due.toDateString() : 'nodue');
+    if (titleDueSet.has(key)) return false;
+    titleDueSet.add(key);
+    return true;
+  });
+
+  assignments = assignments.filter(a => !parentDone[a.id]);
+
+  assignments.sort((a, b) => {
+    const order = { zeroed: 0, missing: 1, upcoming: 2 };
+    if ((order[a.status]??2) !== (order[b.status]??2)) return (order[a.status]??2) - (order[b.status]??2);
+    return (a.due || new Date(9e15)) - (b.due || new Date(9e15));
+  });
+
+  const syncTime = syncedAt ? ' · synced ' + new Date(syncedAt).toLocaleTimeString() : '';
+  document.getElementById('last-sync').textContent = 'From extension' + syncTime;
+  renderAll();
+  showToast('Loaded ' + assignments.length + ' assignments ✓', 'ok');
+};
+
 // Auto-load from extension data on page load
 document.addEventListener('DOMContentLoaded', () => {
   const hasExtData = localStorage.getItem('nhq_upcoming_raw') || localStorage.getItem('nhq_missing_raw');
