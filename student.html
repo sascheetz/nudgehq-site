@@ -3,91 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Assignments — Nudge HQ</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --bg:      #ffffff;
   --surface: #ffffff;
-  --card-bg: #f8f9fa;
+  --surface2: #f8f9fa;
   --border:  #e2e6ea;
+  --border2: #c8cdd4;
   --ink:     #1a1d23;
-  --sub:     #4a5568;
+  --subink:  #4a5568;
   --muted:   #9aa5b4;
   --fire:    #e53e3e;
   --soon:    #dd6b20;
   --ok:      #3182ce;
   --chill:   #38a169;
+  --accent:  #5a67d8;
   --missing: #805ad5;
   --zeroed:  #e53e3e;
   --check:   #38a169;
   --font:    'Inter', sans-serif;
 }
 
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font);
-  font-size: 16px;
-  min-height: 100vh;
-  padding-bottom: 80px;
-}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; min-height: 100vh; display: flex; }
 
-/* ── Header ── */
-header {
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-  padding: 16px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-h1 { font-size: 1.3rem; font-weight: 700; }
-.date-lbl { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+/* ── Shell ── */
+.shell { display: flex; width: 100%; min-height: 100vh; }
 
-/* Progress */
-.progress-wrap { display: flex; align-items: center; gap: 10px; }
+/* ── Sidebar ── */
+aside {
+  width: 220px; flex-shrink: 0;
+  background: var(--surface2);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  display: flex; flex-direction: column; gap: 20px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.wordmark h1 { font-size: 1.3rem; font-weight: 700; }
+.wordmark h1 strong { color: var(--accent); }
+.wordmark p  { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+
+.s-section { display: flex; flex-direction: column; gap: 8px; }
+.s-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-box  { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; }
+.stat-num  { font-size: 1.5rem; font-weight: 700; color: var(--ink); }
+.stat-lbl  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.s-missing .stat-num { color: var(--missing); }
+.s-fire    .stat-num { color: var(--fire); }
+.s-check   .stat-num { color: var(--check); }
+
+/* Progress bar */
+.progress-wrap { display: flex; align-items: center; gap: 8px; }
 .progress-bar  { flex: 1; height: 6px; background: var(--border); border-radius: 10px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--check); border-radius: 10px; transition: width 0.4s ease; width: 0%; }
-.progress-lbl  { font-size: 0.78rem; color: var(--sub); min-width: 40px; text-align: right; }
+.progress-lbl  { font-size: 0.72rem; color: var(--subink); min-width: 36px; text-align: right; }
 
-/* ── No data banner ── */
+/* ── Main ── */
+main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.main-top {
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--bg); z-index: 5;
+}
+.main-top h2 { font-size: 1.2rem; font-weight: 700; }
+.sync-time   { font-size: 0.78rem; color: var(--muted); }
+
+/* No data banner */
 #no-data {
-  display: none;
-  margin: 24px 16px;
-  background: #fff8f0;
-  border: 1px solid #fbd38d;
-  border-radius: 10px;
-  padding: 16px;
-  font-size: 0.85rem;
-  color: #744210;
-  line-height: 1.6;
+  display: none; margin: 16px 24px;
+  background: #fff8f0; border: 1px solid #fbd38d;
+  border-radius: 10px; padding: 14px;
+  font-size: 0.85rem; color: #744210; line-height: 1.6;
 }
 #no-data.show { display: block; }
 
-/* ── Section headers ── */
-.section-head {
-  padding: 16px 16px 8px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  font-weight: 600;
+/* ── Cards ── */
+.date-group { padding: 0 24px; }
+.date-head  {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--subink);
+  padding: 16px 0 6px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 2px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
 }
-
-/* ── Cards grid ── */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 10px;
-  padding: 8px 12px 0;
+  margin-bottom: 4px;
 }
 
 .card {
@@ -95,19 +107,21 @@ h1 { font-size: 1.3rem; font-weight: 700; }
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: flex; flex-direction: column; gap: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.15s;
 }
+.card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
 .card.done { opacity: 0.45; }
-.card.done .card-title { text-decoration: line-through; color: var(--muted); }
+.card.done .c-title { text-decoration: line-through; color: var(--muted); }
 .card.c-zeroed  { border-color: #fc8181; background: #fff5f5; }
 .card.c-missing { border-color: #b794f4; background: #faf5ff; }
 
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.course { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-course  { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-title   { font-size: 1rem; font-weight: 600; line-height: 1.35; color: var(--ink); }
+.c-meta    { font-size: 0.82rem; color: var(--subink); }
+.c-countdown { font-size: 0.85rem; font-weight: 600; margin-top: 1px; }
 
 .pill { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
 .p-zeroed  { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
@@ -118,46 +132,43 @@ h1 { font-size: 1.3rem; font-weight: 700; }
 .p-chill   { background: #f0fff4; color: #276749; border: 1px solid #68d391; }
 .p-done    { background: #f0fff4; color: #276749; border: 1px solid #68d391; }
 
-.card-title { font-size: 1rem; font-weight: 600; line-height: 1.35; color: var(--ink); }
-
-.card-meta { font-size: 0.82rem; color: var(--sub); }
-.due-zeroed  { color: var(--zeroed); font-weight: 600; }
-.due-missing { color: var(--missing); font-weight: 600; }
-.due-fire    { color: var(--fire); font-weight: 600; }
+.due-zeroed  { color: var(--zeroed); }
+.due-missing { color: var(--missing); }
+.due-fire    { color: var(--fire); }
 .due-soon    { color: var(--soon); }
 .due-ok      { color: var(--ok); }
 
 /* ── Submission type ── */
 .sub-section { border-top: 1px solid var(--border); padding-top: 10px; }
-.sub-lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 7px; }
-.sub-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sub-lbl     { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 7px; }
+.sub-btns    { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .sub-btn {
-  background: var(--card-bg); border: 1px solid var(--border);
+  background: var(--surface2); border: 1px solid var(--border);
   border-radius: 20px; padding: 4px 12px;
-  font-family: var(--font); font-size: 0.80rem; color: var(--sub);
+  font-family: var(--font); font-size: 0.80rem; color: var(--subink);
   cursor: pointer; transition: all 0.15s;
 }
-.sub-btn:hover { border-color: var(--check); color: var(--check); }
+.sub-btn:hover  { border-color: var(--check); color: var(--check); }
 .sub-btn.active { background: var(--check); color: white; border-color: var(--check); }
 .sub-note {
-  width: 100%; background: var(--card-bg); border: 1px solid var(--border);
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
   border-radius: 6px; padding: 6px 10px; font-family: var(--font);
   font-size: 0.80rem; color: var(--ink); outline: none; display: none;
 }
-.sub-note.show { display: block; }
+.sub-note.show  { display: block; }
 .sub-note:focus { border-color: var(--check); }
 
 /* ── Done button ── */
 .done-btn {
-  width: 100%; background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 10px; font-family: var(--font);
-  font-size: 0.85rem; font-weight: 500; color: var(--sub);
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px; font-family: var(--font);
+  font-size: 0.85rem; font-weight: 500; color: var(--subink);
   cursor: pointer; transition: all 0.15s; text-align: center;
 }
-.done-btn:hover { border-color: var(--check); color: var(--check); background: #f0fff4; }
+.done-btn:hover   { border-color: var(--check); color: var(--check); background: #f0fff4; }
 .done-btn.checked { background: #f0fff4; color: var(--check); border-color: #68d391; }
 
-/* ── Undo bar ── */
+/* ── Undo ── */
 #undo-bar {
   position: fixed; bottom: 20px; left: 50%;
   transform: translateX(-50%) translateY(20px);
@@ -170,8 +181,7 @@ h1 { font-size: 1.3rem; font-weight: 700; }
 #undo-bar.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
 #undo-btn {
   background: white; color: #1a1d23; border: none; border-radius: 12px;
-  padding: 4px 12px; font-family: var(--font); font-size: 0.75rem;
-  font-weight: 700; cursor: pointer;
+  padding: 4px 12px; font-family: var(--font); font-size: 0.75rem; font-weight: 700; cursor: pointer;
 }
 
 /* ── Celebrate ── */
@@ -180,46 +190,65 @@ h1 { font-size: 1.3rem; font-weight: 700; }
   background: rgba(255,255,255,0.92); z-index: 50;
   align-items: center; justify-content: center;
   flex-direction: column; text-align: center; padding: 40px;
-  backdrop-filter: blur(4px);
 }
 #celebrate.show { display: flex; }
 #celebrate .big { font-size: 3.5rem; margin-bottom: 12px; }
 #celebrate h2   { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
-#celebrate p    { font-size: 0.9rem; color: var(--sub); line-height: 1.7; margin-bottom: 20px; }
+#celebrate p    { font-size: 0.9rem; color: var(--subink); line-height: 1.7; margin-bottom: 20px; }
 #celebrate button {
   background: #1a1d23; color: white; border: none;
   border-radius: 8px; padding: 12px 28px;
   font-family: var(--font); font-size: 0.85rem; cursor: pointer;
 }
 
-/* ── Empty / Loading ── */
-#empty   { display: none; text-align: center; padding: 60px 20px; color: var(--muted); font-size: 0.9rem; }
-#loading { display: none; text-align: center; padding: 60px; color: var(--muted); font-size: 0.85rem; }
-.pulse   { animation: pulse 1.3s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:0.25} 50%{opacity:1} }
+/* ── Empty ── */
+#empty { display: none; text-align: center; padding: 60px 24px; color: var(--muted); font-size: 0.9rem; }
 </style>
 </head>
 <body>
+<div class="shell">
 
-<header>
-  <div class="header-row">
-    <div>
-      <h1>My Assignments</h1>
-      <div class="date-lbl" id="date-lbl"></div>
+<!-- Sidebar -->
+<aside>
+  <div class="wordmark">
+    <h1>Nudge <strong>HQ</strong></h1>
+    <p>My Assignments</p>
+  </div>
+
+  <div class="s-section">
+    <div class="s-label">Progress</div>
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-lbl" id="progress-lbl">0 / 0</div>
     </div>
   </div>
-  <div class="progress-wrap">
-    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-    <div class="progress-lbl" id="progress-lbl">0 / 0</div>
-  </div>
-</header>
 
-<div id="no-data">
-  ⚠️ No assignment data yet. Ask a parent to sync the Nudge HQ extension while logged into Canvas.
-</div>
-<div id="loading"><span class="pulse">Loading your assignments…</span></div>
-<div id="empty">No assignments right now. 🎉</div>
-<div id="card-wrap"></div>
+  <div class="s-section">
+    <div class="s-label">At a Glance</div>
+    <div class="stat-grid">
+      <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
+      <div class="stat-box s-fire">   <div class="stat-num" id="s-today">—</div>  <div class="stat-lbl">Due Today</div></div>
+      <div class="stat-box s-check">  <div class="stat-num" id="s-done">—</div>   <div class="stat-lbl">Checked Off</div></div>
+      <div class="stat-box">          <div class="stat-num" id="s-upcoming">—</div><div class="stat-lbl">Upcoming</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main>
+  <div class="main-top">
+    <h2 id="main-title">My Assignments</h2>
+    <span class="sync-time" id="sync-time">Not yet synced</span>
+  </div>
+
+  <div id="no-data" class="show">
+    ⚠️ No assignment data yet. The Nudge HQ extension needs to sync while you're logged into Canvas.
+  </div>
+  <div id="empty">Nothing here — you're all caught up! 🎉</div>
+  <div id="card-wrap"></div>
+</main>
+
+</div><!-- end shell -->
 
 <div id="celebrate">
   <div class="big">🎉</div>
@@ -242,14 +271,6 @@ let localSubTypes = JSON.parse(localStorage.getItem('nhq_subtypes') || '{}');
 let lastChecked   = null;
 let undoTimer     = null;
 
-// ── Date header ──
-document.addEventListener('DOMContentLoaded', () => {
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const now  = new Date();
-  const el   = document.getElementById('date-lbl');
-  if (el) el.textContent = days[now.getDay()] + ' · ' + now.toLocaleDateString('en-US', { month:'long', day:'numeric' });
-});
-
 // ── Urgency ──
 function urgency(a) {
   if (a.status === 'zeroed')  return 'zeroed';
@@ -259,13 +280,29 @@ function urgency(a) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
   const days  = Math.round((due - today) / 86400000);
-  if (days <= 0)  return 'fire';
+  if (days <= 0) return 'fire';
   if (days === 1) return 'soon';
   const dow = today.getDay();
   const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
   if (days <= daysUntilFriday) return 'soon';
   if (days <= daysUntilFriday + 7) return 'ok';
   return 'chill';
+}
+
+function dateGroupLabel(a) {
+  if (!a.due) return '📅 Upcoming';
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  const diff  = Math.round((due - today) / 86400000);
+  if (diff < 0)  return '⚠️ Overdue';
+  if (diff === 0) return '📅 Today';
+  if (diff === 1) return '📅 Tomorrow';
+  const dow = today.getDay();
+  const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
+  if (diff <= daysUntilFriday) return '📅 This Week';
+  if (diff <= daysUntilFriday + 7) return '📅 Next Week';
+  return '📅 Later';
 }
 
 function dueLabel(a) {
@@ -292,6 +329,14 @@ function dueLabel(a) {
   return dateStr + ' · ' + timeStr;
 }
 
+function countdown(a) {
+  if (!a.due || a.status === 'zeroed' || a.status === 'missing') return '';
+  const h = Math.round((a.due - new Date()) / 3600000);
+  if (h < 0) return Math.abs(h) < 24 ? Math.abs(h) + 'h overdue' : Math.floor(Math.abs(h)/24) + 'd overdue';
+  if (h < 24) return h + 'h away';
+  return Math.floor(h/24) + 'd ' + (h % 24) + 'h away';
+}
+
 function pillLabel(a, u) {
   if (localChecked[a.id]) return '✓ Done';
   const now = new Date(); now.setHours(0,0,0,0);
@@ -299,80 +344,66 @@ function pillLabel(a, u) {
   return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon: dy===1?'🟠 Due Tomorrow':'🟠 This Week', ok:'🟡 Next Week', chill:'🟢 Later' }[u] || '';
 }
 
-// ── Load from extension data ──
+// ── Load from extension ──
 function loadFromStorage() {
   const userIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
   const params  = new URLSearchParams(window.location.search);
   const userId  = params.get('userId') || userIds[0] || '';
   const prefix  = userId ? 'nhq_' + userId + '_' : 'nhq_';
 
-  const upcomingRaw  = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw')  || localStorage.getItem('nhq_upcoming_raw')  || '[]');
-  const missingRaw   = JSON.parse(localStorage.getItem(prefix + 'missing_raw')   || localStorage.getItem('nhq_missing_raw')   || '[]');
-  const plannerRaw   = JSON.parse(localStorage.getItem(prefix + 'planner_raw')   || localStorage.getItem('nhq_planner_raw')   || '[]');
-  const courseMap    = JSON.parse(localStorage.getItem(prefix + 'course_map')    || localStorage.getItem('nhq_course_map')    || '{}');
-  const submittedIds = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids') || localStorage.getItem('nhq_submitted_ids') || '[]'));
+  const upcomingRaw   = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw')   || localStorage.getItem('nhq_upcoming_raw')   || '[]');
+  const missingRaw    = JSON.parse(localStorage.getItem(prefix + 'missing_raw')    || localStorage.getItem('nhq_missing_raw')    || '[]');
+  const plannerRaw    = JSON.parse(localStorage.getItem(prefix + 'planner_raw')    || localStorage.getItem('nhq_planner_raw')    || '[]');
+  const courseMap     = JSON.parse(localStorage.getItem(prefix + 'course_map')     || localStorage.getItem('nhq_course_map')     || '{}');
+  const submittedIds  = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids')   || localStorage.getItem('nhq_submitted_ids')   || '[]'));
+  const markedDoneIds = new Set(JSON.parse(localStorage.getItem(prefix + 'marked_done_ids') || localStorage.getItem('nhq_marked_done_ids') || '[]'));
+  const syncedAt      = localStorage.getItem(prefix + 'synced_at') || localStorage.getItem('nhq_synced_at');
 
   if (!upcomingRaw.length && !missingRaw.length) {
     document.getElementById('no-data').classList.add('show');
-    document.getElementById('loading').style.display = 'none';
     return;
   }
-
   document.getElementById('no-data').classList.remove('show');
-  document.getElementById('loading').style.display = 'none';
+
+  if (syncedAt) {
+    document.getElementById('sync-time').textContent = 'Synced · ' + new Date(syncedAt).toLocaleTimeString();
+  }
 
   const now2 = new Date();
   const academicStart = new Date(now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1);
   const seen = new Set();
   assignments = [];
 
-  // Missing
   missingRaw.forEach(a => {
     const id = String(a.id);
     if (seen.has(id)) return;
     seen.add(id);
-    assignments.push({
-      id, title: a.name || 'Untitled',
-      course: courseMap[String(a.course_id)] || 'Course ' + a.course_id,
-      due:    a.due_at ? new Date(a.due_at) : null,
-      status: 'missing', points: a.points_possible || null,
-    });
+    assignments.push({ id, title: a.name || 'Untitled', course: courseMap[String(a.course_id)] || '', due: a.due_at ? new Date(a.due_at) : null, status: 'missing', points: a.points_possible || null });
   });
 
-  // Upcoming — skip submitted
   upcomingRaw.filter(e => e.type === 'Assignment' || e.assignment).forEach(e => {
     const a   = e.assignment || e;
     const id  = String(a.id || e.id);
-    if (seen.has(id) || submittedIds.has(id)) return;
+    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
     const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
     if (!due || due < academicStart) return;
-    const title = a.name || a.title || e.title || e.context_name || '';
+    const title = a.name || a.title || e.title || '';
     if (!title) return;
     seen.add(id);
-    assignments.push({
-      id, title,
-      course: courseMap[String(a.course_id || e.course_id)] || e.context_name || '',
-      due, status: 'upcoming', points: a.points_possible || null,
-    });
+    assignments.push({ id, title, course: courseMap[String(a.course_id || e.course_id)] || e.context_name || '', due, status: 'upcoming', points: a.points_possible || null });
   });
 
-  // Planner — skip submitted
   plannerRaw.filter(p => p.plannable_type === 'assignment' && p.plannable).forEach(p => {
     const id = String(p.plannable_id);
-    if (seen.has(id) || submittedIds.has(id)) return;
+    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
     const due = p.plannable.due_at ? new Date(p.plannable.due_at) : null;
     if (!due || due < academicStart) return;
     const title = p.plannable.title || p.plannable.name || '';
     if (!title) return;
     seen.add(id);
-    assignments.push({
-      id, title,
-      course: courseMap[String(p.course_id)] || '',
-      due, status: 'upcoming', points: p.plannable.points_possible || null,
-    });
+    assignments.push({ id, title, course: courseMap[String(p.course_id)] || '', due, status: 'upcoming', points: p.plannable.points_possible || null });
   });
 
-  // Dedup
   const seen2 = new Set();
   assignments = assignments.filter(a => {
     const key = a.title.trim().toLowerCase() + '|' + (a.due ? a.due.toDateString() : 'nodue');
@@ -381,122 +412,128 @@ function loadFromStorage() {
     return true;
   });
 
-  // Sort
   assignments.sort((a, b) => {
     const order = { zeroed: 0, missing: 1, upcoming: 2 };
     if ((order[a.status]??2) !== (order[b.status]??2)) return (order[a.status]??2) - (order[b.status]??2);
     return (a.due || new Date(9e15)) - (b.due || new Date(9e15));
   });
 
-  renderCards();
-}
-
-// ── Date group label ──
-function dateGroupLabel(a) {
-  if (!a.due) return '📅 Upcoming';
-  const now   = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
-  const diff  = Math.round((due - today) / 86400000);
-  if (diff < 0)   return '⚠️ Overdue';
-  if (diff === 0) return '📅 Today';
-  if (diff === 1) return '📅 Tomorrow';
-  const dow = today.getDay();
-  const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
-  if (diff <= daysUntilFriday) return '📅 This Week';
-  if (diff <= daysUntilFriday + 7) return '📅 Next Week';
-  return '📅 Later';
+  renderAll();
 }
 
 // ── Render ──
+function renderAll() {
+  updateStats();
+  renderCards();
+}
+
+function updateStats() {
+  const total   = assignments.length;
+  const checked = assignments.filter(a => localChecked[a.id]).length;
+  document.getElementById('progress-fill').style.width = total ? Math.round(checked/total*100) + '%' : '0%';
+  document.getElementById('progress-lbl').textContent  = checked + ' / ' + total;
+  document.getElementById('s-missing').textContent  = assignments.filter(a => a.status === 'missing').length || '0';
+  document.getElementById('s-today').textContent    = assignments.filter(a => urgency(a) === 'fire' && a.status === 'upcoming').length || '0';
+  document.getElementById('s-done').textContent     = checked || '0';
+  document.getElementById('s-upcoming').textContent = assignments.filter(a => a.status === 'upcoming' && !localChecked[a.id]).length || '0';
+}
+
 function renderCards() {
   const wrap = document.getElementById('card-wrap');
   wrap.innerHTML = '';
-
-  const total   = assignments.length;
-  const checked = assignments.filter(a => localChecked[a.id]).length;
-  document.getElementById('progress-fill').style.width  = total ? Math.round(checked/total*100) + '%' : '0%';
-  document.getElementById('progress-lbl').textContent   = checked + ' / ' + total;
 
   const zeroed   = assignments.filter(a => a.status === 'zeroed'  && !localChecked[a.id]);
   const missing  = assignments.filter(a => a.status === 'missing' && !localChecked[a.id]);
   const upcoming = assignments.filter(a => a.status === 'upcoming'&& !localChecked[a.id]);
   const done     = assignments.filter(a => localChecked[a.id]);
 
-  document.getElementById('empty').style.display = total === 0 ? 'block' : 'none';
+  document.getElementById('empty').style.display = assignments.length === 0 ? 'block' : 'none';
 
-  if (zeroed.length)  addSection(wrap, '🔴 Graded Zero', zeroed);
-  if (missing.length) addSection(wrap, '⚠️ Overdue / Missing', missing);
+  if (zeroed.length)  addGroup(wrap, '🔴 Graded Zero', zeroed);
+  if (missing.length) addGroup(wrap, '⚠️ Overdue / Missing', missing);
 
-  // Group upcoming by date label
   if (upcoming.length) {
     const groups = {};
-    const groupOrder = [];
+    const order  = [];
     upcoming.forEach(a => {
       const lbl = dateGroupLabel(a);
-      if (!groups[lbl]) { groups[lbl] = []; groupOrder.push(lbl); }
+      if (!groups[lbl]) { groups[lbl] = []; order.push(lbl); }
       groups[lbl].push(a);
     });
-    groupOrder.forEach(lbl => addSection(wrap, lbl, groups[lbl]));
+    order.forEach(lbl => addGroup(wrap, lbl, groups[lbl]));
   }
 
-  if (done.length) addSection(wrap, '✓ Completed', done);
+  if (done.length) addGroup(wrap, '✓ Completed', done);
 }
 
-function addSection(wrap, label, items) {
+function addGroup(wrap, label, items) {
+  const group = document.createElement('div');
+  group.className = 'date-group';
+
   const head = document.createElement('div');
-  head.className = 'section-head';
+  head.className = 'date-head';
   head.textContent = label;
-  wrap.appendChild(head);
+  group.appendChild(head);
 
   const grid = document.createElement('div');
   grid.className = 'cards-grid';
   items.forEach(a => grid.appendChild(makeCard(a)));
-  wrap.appendChild(grid);
+  group.appendChild(grid);
+  wrap.appendChild(group);
 }
 
 function makeCard(a) {
-  const checked  = !!localChecked[a.id];
-  const u        = urgency(a);
-  const subType  = localSubTypes[a.id] || {};
-  const pillMap  = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' };
-  const dueMap   = { zeroed:'due-zeroed', missing:'due-missing', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
+  const checked = !!localChecked[a.id];
+  const u       = urgency(a);
+  const sub     = localSubTypes[a.id] || {};
+  const pillMap = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' };
+  const dueMap  = { zeroed:'due-zeroed', missing:'due-missing', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
 
   const card = document.createElement('div');
-  card.className = 'card' + (checked ? ' done' : '') + (a.status === 'zeroed' ? ' c-zeroed' : '') + (a.status === 'missing' ? ' c-missing' : '');
+  card.className = 'card' + (checked?' done':'') + (a.status==='zeroed'?' c-zeroed':'') + (a.status==='missing'?' c-missing':'');
 
-  // Top
   const top = document.createElement('div');
   top.className = 'card-top';
-  top.innerHTML = `<span class="course">${esc(a.course)}</span>
-    <span class="pill ${checked ? 'p-done' : (pillMap[u]||'p-chill')}">${pillLabel(a, u)}</span>`;
+  top.innerHTML = `<span class="c-course">${esc(a.course)}</span><span class="pill ${checked?'p-done':(pillMap[u]||'p-chill')}">${pillLabel(a,u)}</span>`;
 
-  // Title
   const title = document.createElement('div');
-  title.className = 'card-title';
+  title.className = 'c-title';
   title.textContent = a.title;
 
-  // Due
   const meta = document.createElement('div');
-  meta.className = 'card-meta ' + (dueMap[u] || '');
-  meta.textContent = dueLabel(a);
+  meta.className = 'c-meta';
+  const dueSpan = document.createElement('div');
+  dueSpan.className = dueMap[u] || '';
+  dueSpan.textContent = dueLabel(a);
+  const ctdown = document.createElement('div');
+  ctdown.className = 'c-countdown ' + (dueMap[u] || '');
+  ctdown.textContent = countdown(a);
+  if (a.points) {
+    const pts = document.createElement('div');
+    pts.style.color = 'var(--muted)';
+    pts.style.fontSize = '0.78rem';
+    pts.textContent = a.points + ' pts possible';
+    meta.appendChild(dueSpan);
+    meta.appendChild(ctdown);
+    meta.appendChild(pts);
+  } else {
+    meta.appendChild(dueSpan);
+    meta.appendChild(ctdown);
+  }
 
   // Submission type
   const subSection = document.createElement('div');
   subSection.className = 'sub-section';
-
   const subLbl = document.createElement('div');
   subLbl.className = 'sub-lbl';
   subLbl.textContent = 'How is this submitted?';
-
   const subBtns = document.createElement('div');
   subBtns.className = 'sub-btns';
-
   const noteInput = document.createElement('input');
-  noteInput.className = 'sub-note' + ((subType.type === 'external' || subType.type === 'both') ? ' show' : '');
+  noteInput.className = 'sub-note' + ((sub.type==='external'||sub.type==='both')?' show':'');
   noteInput.type = 'text';
-  noteInput.placeholder = 'Which platform? (e.g. Canva, Google Docs…)';
-  noteInput.value = subType.note || '';
+  noteInput.placeholder = 'Which platform?';
+  noteInput.value = sub.note || '';
   let noteTimer;
   noteInput.addEventListener('input', () => {
     clearTimeout(noteTimer);
@@ -506,32 +543,30 @@ function makeCard(a) {
       localStorage.setItem('nhq_subtypes', JSON.stringify(localSubTypes));
     }, 600);
   });
-
   [
-    { key:'paper',    icon:'📄', label:'Paper' },
-    { key:'canvas',   icon:'🖥️',  label:'Canvas' },
-    { key:'external', icon:'🔗', label:'External' },
-    { key:'both',     icon:'📤', label:'Both' },
+    {key:'paper', icon:'📄', label:'Paper'},
+    {key:'canvas', icon:'🖥️', label:'Canvas'},
+    {key:'external', icon:'🔗', label:'External'},
+    {key:'both', icon:'📤', label:'Both'},
   ].forEach(t => {
     const btn = document.createElement('button');
-    btn.className = 'sub-btn' + (subType.type === t.key ? ' active' : '');
+    btn.className = 'sub-btn' + (sub.type===t.key?' active':'');
     btn.textContent = t.icon + ' ' + t.label;
     btn.addEventListener('click', () => {
-      localSubTypes[a.id] = { type: t.key, note: (localSubTypes[a.id] || {}).note || '' };
+      localSubTypes[a.id] = { type: t.key, note: (localSubTypes[a.id]||{}).note||'' };
       localStorage.setItem('nhq_subtypes', JSON.stringify(localSubTypes));
-      subBtns.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b === btn));
-      noteInput.classList.toggle('show', t.key === 'external' || t.key === 'both');
+      subBtns.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b===btn));
+      noteInput.classList.toggle('show', t.key==='external'||t.key==='both');
     });
     subBtns.appendChild(btn);
   });
-
   subSection.appendChild(subLbl);
   subSection.appendChild(subBtns);
   subSection.appendChild(noteInput);
 
   // Done button
   const doneBtn = document.createElement('button');
-  doneBtn.className = 'done-btn' + (checked ? ' checked' : '');
+  doneBtn.className = 'done-btn' + (checked?' checked':'');
   doneBtn.textContent = checked ? '✓ Marked Done' : 'Mark as Done';
   doneBtn.addEventListener('click', () => {
     const nowDone = !localChecked[a.id];
@@ -540,10 +575,9 @@ function makeCard(a) {
     localStorage.setItem('nhq_checked', JSON.stringify(localChecked));
     if (nowDone) {
       showUndo(a.id, a.title);
-      const allDone = assignments.every(x => localChecked[x.id]);
-      if (allDone) setTimeout(() => document.getElementById('celebrate').classList.add('show'), 500);
+      if (assignments.every(x => localChecked[x.id])) setTimeout(() => document.getElementById('celebrate').classList.add('show'), 500);
     }
-    renderCards();
+    renderAll();
   });
 
   card.appendChild(top);
@@ -557,12 +591,11 @@ function makeCard(a) {
 // ── Undo ──
 function showUndo(id, title) {
   lastChecked = id;
-  document.getElementById('undo-msg').textContent = '"' + (title.length > 28 ? title.slice(0,28) + '…' : title) + '" marked done';
+  document.getElementById('undo-msg').textContent = '"' + (title.length>28?title.slice(0,28)+'…':title) + '" marked done';
   document.getElementById('undo-bar').classList.add('show');
   clearTimeout(undoTimer);
   undoTimer = setTimeout(() => { document.getElementById('undo-bar').classList.remove('show'); lastChecked = null; }, 5000);
 }
-
 window.undoCheck = function() {
   if (!lastChecked) return;
   delete localChecked[lastChecked];
@@ -570,16 +603,14 @@ window.undoCheck = function() {
   clearTimeout(undoTimer);
   document.getElementById('undo-bar').classList.remove('show');
   localStorage.setItem('nhq_checked', JSON.stringify(localChecked));
-  renderCards();
+  renderAll();
 };
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── Init ──
-document.getElementById('loading').style.display = 'block';
 loadFromStorage();
 
-// Listen for bridge data injection
 window.addEventListener('nhq_data_ready', () => {
   localChecked  = JSON.parse(localStorage.getItem('nhq_checked')  || '{}');
   localSubTypes = JSON.parse(localStorage.getItem('nhq_subtypes') || '{}');
