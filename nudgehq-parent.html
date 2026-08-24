@@ -7,35 +7,34 @@
   <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nudge HQ — Parent Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
-    --bg: #f5f0e8;
-    --surface: #fdfaf4;
-    --surface2: #f0ebe0;
-    --border: #e0d8c8;
-    --border2: #ccc4b0;
-    --ink: #1c1814;
-    --subink: #6b6358;
-    --muted: #b0a898;
-    --fire: #c0392b;
-    --soon: #c96a1a;
-    --ok: #a08010;
-    --chill: #2a7a56;
-    --accent: #3d5a99;
-    --missing: #7b2d8b;
-    --student: #c07010;
-    --serif: 'DM Sans', sans-serif;
-    --mono: 'Inter', sans-serif;
+    --bg:      #ffffff;
+    --surface: #ffffff;
+    --surface2: #f8f9fa;
+    --border:  #e2e6ea;
+    --border2: #c8cdd4;
+    --ink:     #1a1d23;
+    --subink:  #4a5568;
+    --muted:   #9aa5b4;
+    --fire:    #e53e3e;
+    --soon:    #dd6b20;
+    --ok:      #3182ce;
+    --chill:   #38a169;
+    --accent:  #5a67d8;
+    --missing: #805ad5;
+    --student: #d69e2e;
+    --zeroed:  #e53e3e;
+    --serif:   'Inter', sans-serif;
+    --font:    'Inter', sans-serif;
+    --mono:    'Inter', sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: var(--bg); color: var(--ink); font-family: var(--mono); font-size: 15px;
+    background: var(--bg); color: var(--ink); font-family: var(--serif); font-size: 16px;
     min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse at 0% 0%, rgba(61,90,153,0.05) 0%, transparent 55%),
-      radial-gradient(ellipse at 100% 100%, rgba(123,45,139,0.04) 0%, transparent 55%);
   }
   .shell { display: grid; grid-template-columns: 310px 1fr; min-height: 100vh; }
 
@@ -48,28 +47,28 @@
   .wordmark { padding-bottom: 4px; border-bottom: 1px solid var(--border); }
   .wordmark h1 { font-family: var(--serif); font-weight: 300; font-style: italic; font-size: 1.9rem; line-height: 1; }
   .wordmark h1 strong { font-weight: 600; color: var(--accent); font-style: normal; }
-  .wordmark p { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 5px; }
+  .wordmark p { font-size: 0.90rem; color: var(--muted); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 5px; }
 
-  .s-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 9px; }
+  .s-label { font-size: 0.88rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted); margin-bottom: 9px; }
   .s-section { display: flex; flex-direction: column; }
 
   .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
-  .field label { font-size: 0.6rem; color: var(--subink); }
+  .field label { font-size: 0.92rem; color: var(--subink); }
   input[type="text"], input[type="tel"], input[type="password"], input[type="url"] {
     background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: 8px 11px; font-family: var(--mono); font-size: 0.63rem; color: var(--ink);
+    padding: 8px 11px; font-family: var(--serif); font-size: 0.80rem; color: var(--ink);
     outline: none; transition: border-color 0.2s; width: 100%;
   }
   input:focus { border-color: var(--accent); }
   input::placeholder { color: var(--muted); }
 
   .canvas-domain {
-    font-size: 0.62rem; color: var(--subink); background: var(--bg); border: 1px solid var(--border);
+    font-size: 0.80rem; color: var(--subink); background: var(--bg); border: 1px solid var(--border);
     border-radius: 6px; padding: 8px 11px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
   }
-  .canvas-domain span { color: var(--chill); font-size: 0.58rem; }
+  .canvas-domain span { color: var(--chill); font-size: 0.90rem; }
 
-  .btn { border: none; border-radius: 7px; padding: 9px 14px; font-family: var(--mono); font-size: 0.63rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s, transform 0.1s; width: 100%; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .btn { border: none; border-radius: 7px; padding: 9px 14px; font-family: var(--serif); font-size: 0.80rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s, transform 0.1s; width: 100%; letter-spacing: 0.04em; margin-bottom: 6px; }
   .btn:active { transform: scale(0.98); }
   .btn-primary   { background: var(--accent);  color: #fff; }
   .btn-secondary { background: var(--surface2);color: var(--subink); border: 1px solid var(--border); }
@@ -79,37 +78,29 @@
   .btn-primary:hover, .btn-purple:hover, .btn-orange:hover { opacity: 0.85; }
   .btn-secondary:hover { color: var(--ink); border-color: var(--border2); }
 
-  .hint { font-size: 0.68rem; color: var(--muted); line-height: 1.65; margin-top: 3px; }
-  .ilink { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; font-family: var(--mono); font-size: 0.57rem; }
+  .hint { font-size: 0.85rem; color: var(--muted); line-height: 1.65; margin-top: 3px; }
+  .ilink { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; font-family: var(--serif); font-size: 0.90rem; }
 
-  /* Firebase status */
-  .fb-status {
-    font-size: 0.58rem; padding: 6px 10px; border-radius: 6px; display: flex; align-items: center; gap: 6px;
-    margin-bottom: 4px;
-  }
-  .fb-status.connected    { background: rgba(62,207,142,0.1);  color: var(--chill);  border: 1px solid rgba(62,207,142,0.25); }
-  .fb-status.disconnected { background: rgba(245,200,66,0.08); color: var(--ok);     border: 1px solid rgba(245,200,66,0.25); }
-  .fb-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-
+  
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
-  .stat-lbl { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
+  .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--fire); }
   .stat-box.s-missing .stat-num { color: var(--missing); }
   .stat-box.s-student .stat-num { color: var(--student); }
 
-  .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--mono); font-size: 0.6rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
+  .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.92rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
   .guide-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ── Main ── */
   main { padding: 28px 26px; overflow-y: auto; }
   .main-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
   .main-top h2 { font-family: var(--serif); font-weight: 300; font-style: italic; font-size: 1.4rem; }
-  .last-sync { font-size: 0.68rem; color: var(--muted); }
+  .last-sync { font-size: 0.85rem; color: var(--muted); }
 
   .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
-  .chip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 0.7rem; font-family: var(--mono); color: var(--subink); cursor: pointer; transition: all 0.15s; }
+  .chip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 0.87rem; font-family: var(--serif); color: var(--subink); cursor: pointer; transition: all 0.15s; }
   .chip:hover:not(.active) { border-color: var(--border2); color: var(--ink); }
   .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .chip.active.c-missing { background: var(--missing); border-color: var(--missing); }
@@ -118,21 +109,21 @@
   /* Missing banner */
   #missing-banner { display: none; background: #fdf0fb; border: 1px solid #d9aee8; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; align-items: center; gap: 14px; flex-wrap: wrap; }
   #missing-banner.on { display: flex; }
-  .mb-text strong { color: var(--missing); font-size: 0.75rem; display: block; margin-bottom: 3px; }
-  .mb-text span   { font-size: 0.6rem; color: var(--subink); line-height: 1.55; }
-  .mb-btn { background: var(--missing); color: #fff; border: none; border-radius: 7px; padding: 9px 15px; font-family: var(--mono); font-size: 0.62rem; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0; }
+  .mb-text strong { color: var(--missing); font-size: 0.90rem; display: block; margin-bottom: 3px; }
+  .mb-text span   { font-size: 0.92rem; color: var(--subink); line-height: 1.55; }
+  .mb-btn { background: var(--missing); color: #fff; border: none; border-radius: 7px; padding: 9px 15px; font-family: var(--serif); font-size: 0.80rem; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; flex-shrink: 0; }
   .mb-btn:hover { opacity: 0.85; }
   .mb-btn:disabled { opacity: 0.4; cursor: default; }
 
   /* Student checked banner */
   #student-banner { display: none; background: #fffbf0; border: 1px solid #f0d090; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
   #student-banner.on { display: block; }
-  #student-banner strong { color: var(--student); font-size: 0.7rem; display: block; margin-bottom: 3px; }
-  #student-banner span   { font-size: 0.6rem; color: var(--subink); line-height: 1.55; }
+  #student-banner strong { color: var(--student); font-size: 0.87rem; display: block; margin-bottom: 3px; }
+  #student-banner span   { font-size: 0.92rem; color: var(--subink); line-height: 1.55; }
 
   /* Cards */
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
   .card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
   .card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
@@ -143,9 +134,9 @@
   @keyframes up { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
 
   .c-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .c-course { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+  .c-course { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
 
-  .pill { font-size: 0.65rem; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.07em; }
+  .pill { font-size: 0.95rem; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.07em; }
   .p-zeroed  { background: #fdf0ee; color: var(--fire);    border: 1px solid #f5c5bf; }
   .p-missing { background: #f9f0fb; color: var(--missing); border: 1px solid #d9aee8; }
   .p-fire    { background: rgba(255,92,92,0.12);   color: var(--fire);    border: 1px solid rgba(255,92,92,0.3); }
@@ -155,9 +146,9 @@
   .p-done    { background: var(--surface2);         color: var(--muted);   border: 1px solid var(--border); }
   .p-student { background: rgba(245,166,35,0.12);  color: var(--student); border: 1px solid rgba(245,166,35,0.3); }
 
-  .c-title { font-family: var(--serif); font-weight: 300; font-size: 1.1rem; line-height: 1.35; color: var(--ink); }
-  .c-meta { font-size: 0.78rem; color: var(--subink); display: flex; flex-direction: column; gap: 3px; }
-  .c-countdown { font-size: 0.82rem; font-weight: 500; margin-top: 2px; }
+  .c-title { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; line-height: 1.35; color: var(--ink); }
+  .c-meta { font-size: 0.92rem; color: var(--subink); display: flex; flex-direction: column; gap: 3px; }
+  .c-countdown { font-size: 0.95rem; font-weight: 500; margin-top: 2px; }
   .cd-missing { color: var(--missing); }
   .cd-fire { color: var(--fire); }
   .cd-soon { color: var(--soon); }
@@ -166,30 +157,30 @@
 
   /* Student checked indicator on card */
   .student-checked-badge {
-    font-size: 0.65rem; color: var(--student); background: rgba(245,166,35,0.1);
+    font-size: 0.95rem; color: var(--student); background: rgba(245,166,35,0.1);
     border: 1px solid rgba(245,166,35,0.25); border-radius: 10px; padding: 2px 8px;
     display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;
   }
 
-  .sub-type-display { font-size: 0.58rem; color: var(--subink); margin-top: 3px; display: block; }
-  .source-badge { font-size: 0.62rem; padding: 2px 7px; border-radius: 10px; letter-spacing: 0.06em; display: inline-block; margin-top: 2px; }
+  .sub-type-display { font-size: 0.90rem; color: var(--subink); margin-top: 3px; display: block; }
+  .source-badge { font-size: 0.80rem; padding: 2px 7px; border-radius: 10px; letter-spacing: 0.06em; display: inline-block; margin-top: 2px; }
   .sb-api  { background: rgba(62,207,142,0.1); color: var(--chill); border: 1px solid rgba(62,207,142,0.2); }
   .sb-ical { background: rgba(91,141,238,0.1); color: var(--accent); border: 1px solid rgba(91,141,238,0.2); }
 
   .c-actions { display: flex; gap: 7px; margin-top: 2px; }
-  .nudge-btn { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--mono); font-size: 0.72rem; color: var(--subink); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; justify-content: center; }
+  .nudge-btn { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.88rem; color: var(--subink); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; justify-content: center; }
   .nudge-btn:hover:not(:disabled) { background: var(--accent); color: #fff; border-color: var(--accent); }
   .nudge-btn.nb-missing:hover:not(:disabled) { background: var(--missing); border-color: var(--missing); }
   .nudge-btn:disabled { opacity: 0.35; cursor: default; }
   .nudge-btn.nb-sent { background: rgba(62,207,142,0.12); color: var(--chill); border-color: rgba(62,207,142,0.3); }
 
-  .done-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-family: var(--mono); font-size: 0.72rem; color: var(--subink); cursor: pointer; transition: all 0.15s; white-space: nowrap; font-weight: 500; }
+  .done-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-family: var(--serif); font-size: 0.88rem; color: var(--subink); cursor: pointer; transition: all 0.15s; white-space: nowrap; font-weight: 500; }
   .done-btn:hover { border-color: var(--chill); color: var(--chill); background: #eef7f3; }
   .done-btn.db-checked { background: #eef7f3; color: var(--chill); border-color: #b0d8c8; }
 
   .date-header {
     grid-column: 1 / -1;
-    font-size: 0.72rem;
+    font-size: 0.88rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -202,12 +193,12 @@
 
   #empty { display:none; grid-column:1/-1; text-align:center; padding:80px 20px; color:var(--muted); }
   #empty .big { font-family:var(--serif); font-style:italic; font-size:2.8rem; margin-bottom:10px; }
-  #empty p { font-size:0.65rem; line-height:1.75; }
-  #loading { display:none; grid-column:1/-1; padding:60px; text-align:center; color:var(--muted); font-size:0.65rem; letter-spacing:0.12em; }
+  #empty p { font-size: 0.95rem; line-height:1.75; }
+  #loading { display:none; grid-column:1/-1; padding:60px; text-align:center; color:var(--muted); font-size: 0.95rem; letter-spacing:0.12em; }
   .pulse { animation:pulse 1.3s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:0.25} 50%{opacity:1} }
 
-  #toast { position:fixed; bottom:22px; right:22px; background:var(--ink); color:var(--bg); border:1px solid var(--border2); padding:11px 18px; border-radius:8px; font-size:0.65rem; opacity:0; transform:translateY(10px); transition:all 0.25s; pointer-events:none; z-index:100; max-width:300px; }
+  #toast { position:fixed; bottom:22px; right:22px; background:var(--ink); color:var(--bg); border:1px solid var(--border2); padding:11px 18px; border-radius:8px; font-size: 0.95rem; opacity:0; transform:translateY(10px); transition:all 0.25s; pointer-events:none; z-index:100; max-width:300px; }
   #toast.show { opacity:1; transform:translateY(0); }
   #toast.t-err { background:rgba(255,92,92,0.15); border-color:rgba(255,92,92,0.4); color:var(--fire); }
   #toast.t-ok  { background:rgba(62,207,142,0.12); border-color:rgba(62,207,142,0.35); color:var(--chill); }
@@ -248,7 +239,7 @@
   .drawer-header h2 { font-family: var(--serif); font-style: italic; font-size: 1.3rem; font-weight: 300; }
   .drawer-close {
     background: none; border: 1px solid var(--border); border-radius: 6px;
-    padding: 4px 10px; font-family: var(--mono); font-size: 0.6rem;
+    padding: 4px 10px; font-family: var(--serif); font-size: 0.92rem;
     color: var(--subink); cursor: pointer;
   }
   .drawer-close:hover { border-color: var(--border2); color: var(--ink); }
@@ -258,22 +249,22 @@
   .modal-bg.open { display:flex; }
   .modal { background:var(--surface); border:1px solid var(--border2); border-radius:14px; max-width:620px; width:100%; max-height:88vh; overflow-y:auto; padding:34px; position:relative; }
   .modal h2 { font-family:var(--serif); font-weight:300; font-style:italic; font-size:1.55rem; margin-bottom:5px; }
-  .modal-sub { font-size:0.62rem; color:var(--subink); margin-bottom:22px; line-height:1.65; }
-  .modal-close { position:absolute; top:14px; right:14px; background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-family:var(--mono); font-size:0.58rem; color:var(--subink); cursor:pointer; }
+  .modal-sub { font-size: 0.80rem; color:var(--subink); margin-bottom:22px; line-height:1.65; }
+  .modal-close { position:absolute; top:14px; right:14px; background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-family:var(--mono); font-size: 0.90rem; color:var(--subink); cursor:pointer; }
   .modal-close:hover { border-color:var(--border2); color:var(--ink); }
 
   .step { display:flex; gap:13px; margin-bottom:17px; align-items:flex-start; }
-  .sn { background:var(--accent); color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:500; flex-shrink:0; margin-top:1px; }
+  .sn { background:var(--accent); color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size: 0.92rem; font-weight:500; flex-shrink:0; margin-top:1px; }
   .sn.purple { background:var(--missing); }
   .sn.orange { background:var(--student); }
   .sb { flex:1; }
-  .sb strong { font-size:0.73rem; display:block; margin-bottom:4px; color:var(--ink); }
-  .sb p { font-size:0.62rem; color:var(--subink); line-height:1.65; }
+  .sb strong { font-size: 0.88rem; display:block; margin-bottom:4px; color:var(--ink); }
+  .sb p { font-size: 0.80rem; color:var(--subink); line-height:1.65; }
   .sb a { color:var(--accent); text-decoration:none; }
-  .sb code { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:2px 7px; font-size:0.59rem; color:var(--ink); display:inline-block; margin-top:4px; word-break:break-all; }
-  .sb pre { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:11px 13px; font-size:0.59rem; color:var(--ink); margin-top:8px; line-height:1.75; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
+  .sb code { background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:2px 7px; font-size: 0.90rem; color:var(--ink); display:inline-block; margin-top:4px; word-break:break-all; }
+  .sb pre { background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:11px 13px; font-size: 0.90rem; color:var(--ink); margin-top:8px; line-height:1.75; overflow-x:auto; white-space:pre-wrap; word-break:break-word; }
 
-  .callout { border-radius:8px; padding:11px 13px; font-size:0.61rem; line-height:1.65; margin:10px 0; }
+  .callout { border-radius:8px; padding:11px 13px; font-size: 0.92rem; line-height:1.65; margin:10px 0; }
   .c-blue   { background:#f0f5ff; border:1px solid #c5d3f0; color:#2d4080; }
   .c-purple { background:#f9f0fb; border:1px solid #d9aee8; color:#5a1a6b; }
   .c-green  { background:#eef7f3; border:1px solid #b0d8c8; color:#1a5c3d; }
@@ -281,7 +272,7 @@
   .divider  { height:1px; background:var(--border); margin:18px 0; }
 
   .tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:1px solid var(--border); }
-  .tab-btn { background:none; border:none; border-bottom:2px solid transparent; padding:8px 14px; font-family:var(--mono); font-size:0.6rem; color:var(--muted); cursor:pointer; transition:all 0.15s; margin-bottom:-1px; }
+  .tab-btn { background:none; border:none; border-bottom:2px solid transparent; padding:8px 14px; font-family:var(--mono); font-size: 0.92rem; color:var(--muted); cursor:pointer; transition:all 0.15s; margin-bottom:-1px; }
   .tab-btn.active { color:var(--ink); border-bottom-color:var(--accent); }
   .tab-pane { display:none; }
   .tab-pane.active { display:block; }
@@ -316,9 +307,6 @@
     </div>
   </div>
 
-  <!-- Firebase status -->
-  <div id="fb-status" class="fb-status disconnected"><span class="fb-dot"></span> Firebase not connected</div>
-
   <!-- Actions -->
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
@@ -337,7 +325,6 @@
 
   <!-- Guide buttons -->
   <div>
-    <button class="guide-btn" onclick="openModal('firebase-modal')">🔥 Firebase Setup Guide →</button>
     <button class="guide-btn" onclick="openModal('make-modal')">⚙️ Make.com Auto-Reminder Guide →</button>
     <button class="guide-btn" onclick="openModal('token-modal')">🔑 How to get your API token →</button>
   </div>
@@ -453,51 +440,6 @@
   </div>
 </div>
 
-<!-- ═══ FIREBASE MODAL ═══ -->
-<div class="modal-bg" id="firebase-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('firebase-modal')">✕ Close</button>
-    <h2>Firebase Setup</h2>
-    <p class="modal-sub">This lets his check-offs sync instantly to your parent view. Free Google account required. Takes about 10 minutes.</p>
-
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('fb-setup')">Setup</button>
-      <button class="tab-btn"        onclick="switchTab('fb-share')">Share with His Device</button>
-    </div>
-
-    <div class="tab-pane active" id="tab-fb-setup">
-      <div class="step"><div class="sn orange">1</div><div class="sb"><strong>Go to Firebase Console</strong><p>Visit <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> and sign in with your Google account.</p></div></div>
-      <div class="step"><div class="sn orange">2</div><div class="sb"><strong>Create a new project</strong><p>Click <strong>Add project</strong> → name it "NudgeHQ" → disable Google Analytics (not needed) → <strong>Create project</strong>.</p></div></div>
-      <div class="step"><div class="sn orange">3</div><div class="sb"><strong>Add a Realtime Database</strong><p>In the left sidebar → <strong>Build → Realtime Database → Create Database</strong>. Choose <strong>United States</strong> location. Select <strong>Start in test mode</strong> (allows read/write for 30 days — you can lock it down later).</p></div></div>
-      <div class="step"><div class="sn orange">4</div><div class="sb">
-        <strong>Copy your Database URL</strong>
-        <p>After creation you'll see a URL like:</p>
-        <code>https://nudgehq-default-rtdb.firebaseio.com</code>
-        <p style="margin-top:6px;">Copy this into the <strong>Firebase Database URL</strong> field in the sidebar.</p>
-      </div></div>
-      <div class="step"><div class="sn orange">5</div><div class="sb"><strong>Get your API Key</strong><p>In Firebase Console → click the ⚙️ gear icon → <strong>Project Settings</strong>. Under "Your apps", click the <strong>&lt;/&gt;</strong> (web) icon to register a web app. Name it "NudgeHQ". Copy the <code>apiKey</code> value from the config snippet shown.</p></div></div>
-      <div class="step"><div class="sn orange">6</div><div class="sb"><strong>Paste both into the sidebar</strong><p>Enter the Database URL and API Key in the sidebar fields, then click <strong>Connect Firebase</strong>. You should see the status turn green.</p></div></div>
-      <div class="callout c-green">✅ Once connected, his check-offs will appear on your dashboard in real time — no refreshing needed.</div>
-    </div>
-
-    <div class="tab-pane" id="tab-fb-share">
-      <div class="callout c-orange">Share these two values with his device so his checklist app can sync to the same database.</div>
-      <div class="step"><div class="sn orange">1</div><div class="sb"><strong>Open his student checklist file</strong><p>The file is called <strong>nudgehq-student.html</strong>. Open it in a browser on his phone or computer.</p></div></div>
-      <div class="step"><div class="sn orange">2</div><div class="sb"><strong>Tap the ⚙ settings button</strong><p>In the top-right corner of his checklist. This opens the setup panel.</p></div></div>
-      <div class="step"><div class="sn orange">3</div><div class="sb">
-        <strong>Enter the same Firebase values</strong>
-        <p>He'll need the same two things you put in the parent dashboard:</p>
-        <code>Database URL: https://nudgehq-default-rtdb.firebaseio.com</code>
-        <code style="margin-top:6px;">API Key: AIzaSy…</code>
-      </div></div>
-      <div class="step"><div class="sn orange">4</div><div class="sb"><strong>Enter his Canvas iCal URL too</strong><p>In Canvas → Calendar → scroll to bottom → Calendar Feed. Copy the link and paste it into the iCal field in his settings panel.</p></div></div>
-      <div class="step"><div class="sn orange">5</div><div class="sb"><strong>Tap Save & Load</strong><p>His assignments will appear. Any time he checks one off, it syncs instantly to your parent dashboard.</p></div></div>
-      <div class="callout c-blue">💡 Tip: Save both HTML files to a shared folder (Google Drive, iCloud Drive) so you can both access them easily from any device.</div>
-    </div>
-    <div style="margin-top:20px;"><button class="btn btn-orange" onclick="closeModal('firebase-modal')">Got it</button></div>
-  </div>
-</div>
-
 <!-- ═══ TWILIO MODAL ═══ -->
 <div class="modal-bg" id="twilio-modal">
   <div class="modal">
@@ -526,7 +468,7 @@ Headers:
   Authorization: Bearer YOUR_OBSERVER_TOKEN
 Query: filter[]=submittable</pre></div></div>
     <div class="step"><div class="sn purple">3</div><div class="sb"><strong>Iterator → loop each missing item</strong><p>Flow Control → Iterator on the response array.</p></div></div>
-    <div class="step"><div class="sn purple">4</div><div class="sb"><strong>Firebase: check if he already marked it done</strong><p>HTTP → GET <code>https://YOUR-DB.firebaseio.com/nhq_checked/{{id}}.json?auth=YOUR_KEY</code>. If result is <code>true</code>, skip with a Filter.</p></div></div>
+    <div class="step"><div class="sn purple">4</div><div class="sb"><strong>Check if he already marked it done</strong><p>Check the student dashboard to see if he checked it off. If result is <code>true</code>, skip with a Filter.</p></div></div>
     <div class="step"><div class="sn purple">5</div><div class="sb"><strong>Twilio: Send SMS</strong><p>Connect Twilio → Send an SMS. Use message template below.</p></div></div>
     <div class="callout c-purple">
       <strong>Message template:</strong><br>
@@ -629,70 +571,16 @@ Query: filter[]=submittable</pre></div></div>
 // ══════════════════════════════════════
 const DOMAIN = 'https://lakota.instructure.com';
 let assignments  = [];
-let studentChecked = {}; // from Firebase
+let studentChecked = {};
 let studentSubTypes = {}; // submission types set by student
 let parentDone   = JSON.parse(localStorage.getItem('nhq_parent_done') || '{}');
 let nudgeCount   = parseInt(localStorage.getItem('nhq_nudges') || '0');
 let activeFilter = 'all';
-let firebaseDb   = null;
 
 // ══════════════════════════════════════
 // FIREBASE
 // ══════════════════════════════════════
-window.connectFirebase = async function() {
-  // Read from fields, fall back to localStorage if fields are empty
-  const urlField = document.getElementById('fb-url');
-  const keyField = document.getElementById('fb-key');
-  const url = (urlField ? urlField.value.trim() : '')
-    || localStorage.getItem('nhq_cred_fb-url')
-    || localStorage.getItem('nhq_fb_url')
-    || '';
-  const key = (keyField ? keyField.value.trim() : '')
-    || localStorage.getItem('nhq_cred_fb-key')
-    || localStorage.getItem('nhq_fb_key')
-    || '';
-  console.log('[Firebase] connectFirebase called. url:', url ? url.slice(0,40)+'...' : 'EMPTY', 'key:', key ? 'present' : 'EMPTY');
-  if (!url || !key) { showToast('Enter both Firebase URL and API Key.', 'err'); return; }
 
-  try {
-    const { initializeApp }                  = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getDatabase, ref, onValue }      = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-
-    const app = initializeApp({ apiKey: key, databaseURL: url }, 'parent-app');
-    const db  = getDatabase(app);
-    firebaseDb = true;
-
-    // Listen for student check-offs in real time
-    onValue(ref(db, 'nhq_checked'), snap => {
-      studentChecked = snap.val() || {};
-      updateFbStatus(true);
-      renderAll();
-    });
-
-    // Listen for submission types set by student
-    onValue(ref(db, 'nhq_subtypes'), snap => {
-      studentSubTypes = snap.val() || {};
-      renderAll();
-    });
-
-    // Save under both key formats for compatibility
-    localStorage.setItem('nhq_fb_url',       url);
-    localStorage.setItem('nhq_fb_key',       key);
-    localStorage.setItem('nhq_cred_fb-url',  url);
-    localStorage.setItem('nhq_cred_fb-key',  key);
-    showToast('Firebase connected!', 'ok');
-  } catch(e) {
-    showToast('Firebase error: ' + e.message, 'err');
-  }
-};
-
-function updateFbStatus(on) {
-  const el = document.getElementById('fb-status');
-  el.className = `fb-status ${on?'connected':'disconnected'}`;
-  el.innerHTML = `<span class="fb-dot"></span> ${on ? 'Connected — syncing live' : 'Not connected'}`;
-}
-
-// Firebase auto-connect handled by load event listener below
 
 // ══════════════════════════════════════
 // CANVAS API
@@ -1218,20 +1106,7 @@ window.toggleParentDone = async function(id) {
   if (nowDone) parentDone[id] = true;
   else delete parentDone[id];
   localStorage.setItem('nhq_parent_done', JSON.stringify(parentDone));
-
-  // Also write to Firebase so his checklist reflects parent check-offs
-  if (firebaseDb) {
-    try {
-      const { getDatabase, ref, set } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-      const db = getDatabase();
-      await set(ref(db, 'nhq_checked/' + id), nowDone);
-      showToast(nowDone ? 'Marked done — synced to his checklist ✓' : 'Unmarked', 'ok');
-    } catch(e) {
-      showToast(nowDone ? 'Marked done locally ✓' : 'Unmarked', 'ok');
-    }
-  } else {
-    showToast(nowDone ? 'Marked done ✓' : 'Unmarked', 'ok');
-  }
+  showToast(nowDone ? 'Marked done ✓' : 'Unmarked', 'ok');
   renderAll();
 };
 
@@ -1336,13 +1211,6 @@ const CRED_FIELDS = ['proxy-url','api-token','token-expiry','student-name','fb-u
     const el    = document.getElementById(id);
     if (saved && el) el.value = saved;
   });
-  // Also directly populate Firebase fields for auto-connect
-  const fbUrl = localStorage.getItem('nhq_cred_fb-url') || localStorage.getItem('nhq_fb_url');
-  const fbKey = localStorage.getItem('nhq_cred_fb-key') || localStorage.getItem('nhq_fb_key');
-  const urlEl = document.getElementById('fb-url');
-  const keyEl = document.getElementById('fb-key');
-  if (fbUrl && urlEl) urlEl.value = fbUrl;
-  if (fbKey && keyEl) keyEl.value = fbKey;
 })();
 
 // Save whenever a field changes
@@ -1358,18 +1226,7 @@ CRED_FIELDS.forEach(id => {
   });
 });
 
-// Auto-connect Firebase if credentials were restored
-document.addEventListener('DOMContentLoaded', () => {
-  const fbUrl = localStorage.getItem('nhq_cred_fb-url') || localStorage.getItem('nhq_fb_url');
-  const fbKey = localStorage.getItem('nhq_cred_fb-key') || localStorage.getItem('nhq_fb_key');
-  if (fbUrl && fbKey) {
-    const urlEl = document.getElementById('fb-url');
-    const keyEl = document.getElementById('fb-key');
-    if (urlEl) urlEl.value = fbUrl;
-    if (keyEl) keyEl.value = fbKey;
-    setTimeout(() => window.connectFirebase && window.connectFirebase(), 200);
-  }
-});
+
 
 // Clear all saved credentials
 window.clearCreds = function() {
@@ -1611,7 +1468,7 @@ window.showQR = function(type) {
   const title = type === 'parent' ? '📱 Your Phone Setup' : '📱 His Phone Setup';
   const desc  = type === 'parent'
     ? 'Scan with your phone camera to open the parent dashboard with all settings pre-filled.'
-    : 'Have him scan this to open his checklist with his Canvas token and Firebase pre-filled.';
+    : 'Have him scan this to open his checklist with his Canvas token pre-filled.';
   const instructions = type === 'parent'
     ? '1. Open your phone camera\n2. Point at the QR code\n3. Tap the link\n4. Bookmark the page'
     : '1. Open his phone camera\n2. Point at the QR code\n3. Tap the link — settings auto-fill\n4. He bookmarks it';
