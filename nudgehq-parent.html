@@ -1129,10 +1129,10 @@ function updateStats() {
   const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]);
   const fire     = assignments.filter(a=>urgency(a)==='fire'&&a.status!=='missing'&&a.status!=='zeroed'&&!parentDone[a.id]);
   const checked  = Object.values(studentChecked).filter(Boolean).length;
-  document.getElementById('s-missing').textContent = (zeroed.length + missing.length)||'0';
-  document.getElementById('s-fire').textContent    = fire.length||'0';
-  document.getElementById('s-checked').textContent = checked||'0';
-  document.getElementById('s-nudged').textContent  = nudgeCount;
+  const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = (zeroed.length + missing.length)||'0';
+  const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
+  const chkEl    = document.getElementById('s-checked'); if(chkEl) chkEl.textContent = checked||'0';
+  const allEl    = document.getElementById('s-all');     if(allEl) allEl.textContent = assignments.filter(a=>!parentDone[a.id]).length||'0';
 }
 
 // ══════════════════════════════════════
