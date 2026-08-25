@@ -84,6 +84,10 @@
   
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+  .s-missing { background: #fff5f5; border-color: #fc8181; }
+  .s-fire    { background: #fff8f0; border-color: #f6ad55; }
+  .s-student { background: #fffaf0; border-color: #f6ad55; }
+  .s-chill   { background: #f0fff4; border-color: #68d391; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--fire); }
@@ -302,8 +306,8 @@
     <div class="stat-grid">
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
-      <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">He Checked Off</div></div>
-      <div class="stat-box">          <div class="stat-num" id="s-nudged">0</div>  <div class="stat-lbl">Nudges Sent</div></div>
+      <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
+      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">All</div></div>
     </div>
   </div>
 
@@ -311,6 +315,7 @@
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
 
     <button class="btn btn-secondary" onclick="window.sendGeneralReminder && window.sendGeneralReminder()">📲 Send General Reminder</button>
     <button class="btn btn-secondary" onclick="window.loadDemo && window.loadDemo()">Try Demo Data</button>
@@ -326,7 +331,6 @@
   <!-- Guide buttons -->
   <div>
     <button class="guide-btn" onclick="openModal('make-modal')">⚙️ Make.com Auto-Reminder Guide →</button>
-    <button class="guide-btn" onclick="openModal('token-modal')">🔑 How to get your API token →</button>
   </div>
 </aside>
 
@@ -378,21 +382,6 @@
 </div>
 
 <div id="toast"></div>
-
-<!-- ═══ TOKEN MODAL ═══ -->
-<div class="modal-bg" id="token-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('token-modal')">✕ Close</button>
-    <h2>Getting Your API Token</h2>
-    <p class="modal-sub">2 minutes. Use your parent observer account.</p>
-    <div class="step"><div class="sn">1</div><div class="sb"><strong>Log into your observer account</strong><p>Go to <a href="https://lakota.instructure.com" target="_blank">lakota.instructure.com</a> with your parent credentials.</p></div></div>
-    <div class="step"><div class="sn">2</div><div class="sb"><strong>Open Account Settings</strong><p>Click your profile picture or initials → <strong>Settings</strong>.</p></div></div>
-    <div class="step"><div class="sn">3</div><div class="sb"><strong>Find Approved Integrations</strong><p>Scroll down → <strong>+ New Access Token</strong>. Name it "Nudge HQ", leave expiry blank → <strong>Generate Token</strong>.</p></div></div>
-    <div class="step"><div class="sn">4</div><div class="sb"><strong>Copy immediately</strong><p>Canvas shows the token <strong>only once</strong>. Copy it now and paste into the sidebar.</p></div></div>
-    <div class="callout c-orange">⚠️ Treat this like a password. It gives read access to Canvas data visible from your observer account.</div>
-    <button class="btn btn-primary" onclick="closeModal('token-modal')">Got it</button>
-  </div>
-</div>
 
 <!-- ═══ BOOKMARK MODAL ═══ -->
 <div class="modal-bg" id="bookmark-modal">
@@ -492,7 +481,15 @@ Query: filter[]=submittable</pre></div></div>
       <div class="s-label">Canvas Connection</div>
       <div class="canvas-domain">🏫 lakota.instructure.com <span>● via extension</span></div>
       <p class="hint" style="margin-top:8px">Data is synced automatically by the Nudge HQ Chrome extension. Open Canvas in Chrome, click the Nudge HQ icon, and click Sync Now.</p>
+    </div>
+
+    <!-- Google Sheets -->
+    <div class="s-section">
+      <div class="s-label">Google Sheets Export</div>
+      <div class="field"><label>Apps Script Web App URL</label><input type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
+      <p class="hint">Set up once — assignments are appended to your Google Sheet on every export. <button class="ilink" onclick="openModal('sheets-guide-modal')">Setup guide →</button></p>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
     </div>
 
         <!-- Twilio -->
@@ -548,6 +545,21 @@ Query: filter[]=submittable</pre></div></div>
       <p>You can open both URLs at once with a single browser bookmark. See the automation guide below.</p>
       <button class="btn btn-primary" style="margin-top:8px" onclick="closeModal('json-guide-modal');openModal('bookmark-modal')">📖 Bookmark Automation Guide →</button>
     </div></div>
+  </div>
+</div>
+
+<!-- Sheets Guide Modal -->
+<div class="modal-bg" id="sheets-guide-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('sheets-guide-modal')">✕ Close</button>
+    <h2>Google Sheets Setup</h2>
+    <p class="modal-sub">One-time setup, ~5 minutes. Assignments will be appended to your sheet on every export.</p>
+    <div class="step"><div class="sn">1</div><div class="sb"><strong>Create a Google Sheet</strong><p>Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> and create a new spreadsheet. Name it "Nudge HQ Assignments".</p></div></div>
+    <div class="step"><div class="sn">2</div><div class="sb"><strong>Open Apps Script</strong><p>In your sheet: <strong>Extensions → Apps Script</strong>. Delete any existing code.</p></div></div>
+    <div class="step"><div class="sn">3</div><div class="sb"><strong>Paste the script</strong><p>Download the <code>NudgeHQ_AppScript.js</code> file and paste its contents into the Apps Script editor. Click <strong>Save</strong>.</p></div></div>
+    <div class="step"><div class="sn">4</div><div class="sb"><strong>Deploy as web app</strong><p>Click <strong>Deploy → New deployment</strong>. Set type to <strong>Web app</strong>. Set "Who has access" to <strong>Anyone</strong>. Click Deploy and authorize when prompted.</p></div></div>
+    <div class="step"><div class="sn">5</div><div class="sb"><strong>Copy the web app URL</strong><p>Copy the URL that looks like <code>https://script.google.com/macros/s/…/exec</code> and paste it into the Apps Script URL field in ⚙ Settings.</p></div></div>
+    <div class="callout c-green">✅ Done! Click "Export to Sheets" anytime to append current assignments to your sheet.</div>
   </div>
 </div>
 
@@ -1202,7 +1214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════
 // PERSIST CREDENTIALS IN LOCALSTORAGE
 // ══════════════════════════════════════
-const CRED_FIELDS = ['proxy-url','api-token','token-expiry','student-name','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
+const CRED_FIELDS = ['proxy-url','api-token','token-expiry','student-name','sheets-url','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
 
 // Restore saved values on page load — run immediately, not on load event
 (function restoreCredentials() {

@@ -52,10 +52,15 @@ aside {
 
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat-box  { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; }
+.s-missing { background: #fff5f5; border-color: #fc8181; }
+.s-fire    { background: #fff8f0; border-color: #f6ad55; }
+.s-check   { background: #f0fff4; border-color: #68d391; }
 .stat-num  { font-size: 1.5rem; font-weight: 700; color: var(--ink); }
 .stat-lbl  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
-.s-missing .stat-num { color: var(--missing); }
-.s-fire    .stat-num { color: var(--fire); }
+.s-missing .stat-num { color: var(--fire); }
+.s-fire    .stat-num { color: var(--soon); }
+.s-check   .stat-num { color: var(--check); }
+.s-fire    .stat-num { color: var(--soon); }
 .s-check   .stat-num { color: var(--check); }
 
 /* Progress bar */
@@ -158,48 +163,11 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .sub-note.show  { display: block; }
 .sub-note:focus { border-color: var(--check); }
 
-/* ── Done button ── */
-.done-btn {
-  width: 100%; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 9px; font-family: var(--font);
-  font-size: 0.85rem; font-weight: 500; color: var(--subink);
-  cursor: pointer; transition: all 0.15s; text-align: center;
-}
-.done-btn:hover   { border-color: var(--check); color: var(--check); background: #f0fff4; }
-.done-btn.checked { background: #f0fff4; color: var(--check); border-color: #68d391; }
 
-/* ── Undo ── */
-#undo-bar {
-  position: fixed; bottom: 20px; left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: #1a1d23; color: white;
-  padding: 10px 8px 10px 16px; border-radius: 20px;
-  font-size: 0.80rem; opacity: 0; transition: all 0.25s;
-  pointer-events: none; white-space: nowrap; z-index: 100;
-  display: flex; align-items: center; gap: 10px;
-}
-#undo-bar.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
-#undo-btn {
-  background: white; color: #1a1d23; border: none; border-radius: 12px;
-  padding: 4px 12px; font-family: var(--font); font-size: 0.75rem; font-weight: 700; cursor: pointer;
-}
 
-/* ── Celebrate ── */
-#celebrate {
-  display: none; position: fixed; inset: 0;
-  background: rgba(255,255,255,0.92); z-index: 50;
-  align-items: center; justify-content: center;
-  flex-direction: column; text-align: center; padding: 40px;
-}
-#celebrate.show { display: flex; }
-#celebrate .big { font-size: 3.5rem; margin-bottom: 12px; }
-#celebrate h2   { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
-#celebrate p    { font-size: 0.9rem; color: var(--subink); line-height: 1.7; margin-bottom: 20px; }
-#celebrate button {
-  background: #1a1d23; color: white; border: none;
-  border-radius: 8px; padding: 12px 28px;
-  font-family: var(--font); font-size: 0.85rem; cursor: pointer;
-}
+
+
+
 
 /* ── Empty ── */
 #empty { display: none; text-align: center; padding: 60px 24px; color: var(--muted); font-size: 0.9rem; }
@@ -228,8 +196,8 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     <div class="stat-grid">
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-today">—</div>  <div class="stat-lbl">Due Today</div></div>
-      <div class="stat-box s-check">  <div class="stat-num" id="s-done">—</div>   <div class="stat-lbl">Checked Off</div></div>
-      <div class="stat-box">          <div class="stat-num" id="s-upcoming">—</div><div class="stat-lbl">Upcoming</div></div>
+      <div class="stat-box s-check">  <div class="stat-num" id="s-done">—</div>   <div class="stat-lbl">Submitted</div></div>
+      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">All</div></div>
     </div>
   </div>
 </aside>
@@ -250,17 +218,9 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
 </div><!-- end shell -->
 
-<div id="celebrate">
-  <div class="big">🎉</div>
-  <h2>All done!</h2>
-  <p>You checked off every assignment.<br>That took real effort. Proud of you.</p>
-  <button onclick="document.getElementById('celebrate').classList.remove('show')">Thanks 😊</button>
-</div>
 
-<div id="undo-bar">
-  <span id="undo-msg">Marked as done</span>
-  <button id="undo-btn" onclick="undoCheck()">Undo</button>
-</div>
+
+
 
 <script type="module">
 
@@ -268,8 +228,6 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 let assignments   = [];
 let localChecked  = JSON.parse(localStorage.getItem('nhq_checked')  || '{}');
 let localSubTypes = JSON.parse(localStorage.getItem('nhq_subtypes') || '{}');
-let lastChecked   = null;
-let undoTimer     = null;
 
 // ── Urgency ──
 function urgency(a) {
@@ -432,10 +390,10 @@ function updateStats() {
   const checked = assignments.filter(a => localChecked[a.id]).length;
   document.getElementById('progress-fill').style.width = total ? Math.round(checked/total*100) + '%' : '0%';
   document.getElementById('progress-lbl').textContent  = checked + ' / ' + total;
-  document.getElementById('s-missing').textContent  = assignments.filter(a => a.status === 'missing').length || '0';
-  document.getElementById('s-today').textContent    = assignments.filter(a => urgency(a) === 'fire' && a.status === 'upcoming').length || '0';
-  document.getElementById('s-done').textContent     = checked || '0';
-  document.getElementById('s-upcoming').textContent = assignments.filter(a => a.status === 'upcoming' && !localChecked[a.id]).length || '0';
+  document.getElementById('s-missing').textContent = assignments.filter(a => a.status === 'missing').length || '0';
+  document.getElementById('s-today').textContent   = assignments.filter(a => urgency(a) === 'fire' && a.status === 'upcoming').length || '0';
+  document.getElementById('s-done').textContent    = checked || '0';
+  const allEl = document.getElementById('s-all'); if(allEl) allEl.textContent = assignments.length || '0';
 }
 
 function renderCards() {
@@ -564,47 +522,14 @@ function makeCard(a) {
   subSection.appendChild(subBtns);
   subSection.appendChild(noteInput);
 
-  // Done button
-  const doneBtn = document.createElement('button');
-  doneBtn.className = 'done-btn' + (checked?' checked':'');
-  doneBtn.textContent = checked ? '✓ Marked Done' : 'Mark as Done';
-  doneBtn.addEventListener('click', () => {
-    const nowDone = !localChecked[a.id];
-    if (nowDone) localChecked[a.id] = true;
-    else delete localChecked[a.id];
-    localStorage.setItem('nhq_checked', JSON.stringify(localChecked));
-    if (nowDone) {
-      showUndo(a.id, a.title);
-      if (assignments.every(x => localChecked[x.id])) setTimeout(() => document.getElementById('celebrate').classList.add('show'), 500);
-    }
-    renderAll();
-  });
-
   card.appendChild(top);
   card.appendChild(title);
   card.appendChild(meta);
   card.appendChild(subSection);
-  card.appendChild(doneBtn);
   return card;
 }
 
-// ── Undo ──
-function showUndo(id, title) {
-  lastChecked = id;
-  document.getElementById('undo-msg').textContent = '"' + (title.length>28?title.slice(0,28)+'…':title) + '" marked done';
-  document.getElementById('undo-bar').classList.add('show');
-  clearTimeout(undoTimer);
-  undoTimer = setTimeout(() => { document.getElementById('undo-bar').classList.remove('show'); lastChecked = null; }, 5000);
-}
-window.undoCheck = function() {
-  if (!lastChecked) return;
-  delete localChecked[lastChecked];
-  lastChecked = null;
-  clearTimeout(undoTimer);
-  document.getElementById('undo-bar').classList.remove('show');
-  localStorage.setItem('nhq_checked', JSON.stringify(localChecked));
-  renderAll();
-};
+
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
