@@ -209,6 +209,11 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     <span class="sync-time" id="sync-time">Not yet synced</span>
   </div>
 
+  <!-- Missing banner -->
+  <div id="missing-banner" style="display:none;background:#fff5f5;border-bottom:1px solid #fc8181;padding:12px 24px;font-size:0.85rem;color:#c53030;font-weight:500;">
+    ⚠️ You have <span id="missing-count">0</span> missing assignment(s) that need attention.
+  </div>
+
   <div id="no-data" class="show">
     ⚠️ No assignment data yet. The Nudge HQ extension needs to sync while you're logged into Canvas.
   </div>
@@ -388,6 +393,11 @@ function renderAll() {
 function updateStats() {
   const total   = assignments.length;
   const checked = assignments.filter(a => localChecked[a.id]).length;
+  const missingCount = assignments.filter(a => a.status === 'missing' || a.status === 'zeroed').length;
+  const banner = document.getElementById('missing-banner');
+  const countEl = document.getElementById('missing-count');
+  if (banner) banner.style.display = missingCount > 0 ? 'block' : 'none';
+  if (countEl) countEl.textContent = missingCount;
   document.getElementById('progress-fill').style.width = total ? Math.round(checked/total*100) + '%' : '0%';
   document.getElementById('progress-lbl').textContent  = checked + ' / ' + total;
   document.getElementById('s-missing').textContent = assignments.filter(a => a.status === 'missing').length || '0';
@@ -466,18 +476,20 @@ function makeCard(a) {
   const ctdown = document.createElement('div');
   ctdown.className = 'c-countdown ' + (dueMap[u] || '');
   ctdown.textContent = countdown(a);
-  if (a.points) {
-    const pts = document.createElement('div');
-    pts.style.color = 'var(--muted)';
-    pts.style.fontSize = '0.78rem';
+  const pts = document.createElement('div');
+  pts.style.fontSize = '0.78rem';
+  if (a.grade !== undefined && a.grade !== null) {
+    const isZero = (a.grade === '0' || a.grade === 0);
+    pts.textContent = a.grade + ' / ' + (a.points || '?') + ' pts';
+    pts.style.color = isZero ? 'var(--fire)' : 'var(--muted)';
+    pts.style.fontWeight = isZero ? '600' : 'normal';
+  } else if (a.points) {
     pts.textContent = a.points + ' pts possible';
-    meta.appendChild(dueSpan);
-    meta.appendChild(ctdown);
-    meta.appendChild(pts);
-  } else {
-    meta.appendChild(dueSpan);
-    meta.appendChild(ctdown);
+    pts.style.color = 'var(--muted)';
   }
+  meta.appendChild(dueSpan);
+  meta.appendChild(ctdown);
+  if (pts.textContent) meta.appendChild(pts);
 
   // Submission type
   const subSection = document.createElement('div');

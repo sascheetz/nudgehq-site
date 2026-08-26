@@ -349,8 +349,8 @@
     <span class="chip c-missing"  onclick="setFilter('missing',this)">⚠️ Missing</span>
     <span class="chip c-fire"     onclick="setFilter('fire',this)">🔴 Due Today</span>
     <span class="chip"            onclick="setFilter('soon',this)">🟠 This Week</span>
-    <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ He Checked Off</span>
-    <span class="chip"            onclick="setFilter('done',this)">✓ Confirmed Done</span>
+    <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ Submitted</span>
+    <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
   </div>
 
   <!-- Missing banner -->
@@ -1079,7 +1079,10 @@ function renderCards() {
       <div class="c-meta">
         <span>${fmtDate(a.due)}</span>
         <span class="c-countdown cd-${u}">${countdown(a)}</span>
-        ${a.status==='zeroed'?`<span style="font-size:0.63rem;font-weight:600;color:var(--fire)">Graded: ${a.grade||'0'} / ${a.points||0} pts — never submitted</span>`:a.points?`<span style="font-size:0.56rem;color:var(--muted)">${a.points} pts possible</span>`:''}
+        ${a.status==='zeroed'?`<span style="font-size:0.78rem;font-weight:600;color:var(--fire)">Graded: ${a.grade||'0'} / ${a.points||0} pts — never submitted</span>`:
+          (a.grade !== undefined && a.grade !== null) ?
+            `<span style="font-size:0.78rem;font-weight:600;color:${(a.grade==='0'||a.grade===0)?'var(--fire)':'var(--subink)'}">${a.grade} / ${a.points||'?'} pts</span>` :
+            a.points?`<span style="font-size:0.78rem;color:var(--muted)">${a.points} pts possible</span>`:''}
         ${sDone?`<span class="student-checked-badge">✅ He marked this done</span>`:''}
         ${(function() {
           const st = studentSubTypes[a.id];
@@ -1249,8 +1252,6 @@ window.clearCreds = function() {
 };
 
 // ── Load from Chrome Extension ──
-let activeUserId = null;
-
 window.loadFromExtension = function(userId) {
   // Find available users
   const userIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
@@ -1260,7 +1261,6 @@ window.loadFromExtension = function(userId) {
     return;
   }
 
-  // Use specified userId or default to first available
   activeUserId = userId || userIds[0];
 
   // Update child switcher UI
@@ -1279,25 +1279,41 @@ window.loadFromExtension = function(userId) {
     });
   }
 
-  const prefix       = 'nhq_' + activeUserId + '_';
-  const upcomingRaw  = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw')  || '[]');
-  const missingRaw   = JSON.parse(localStorage.getItem(prefix + 'missing_raw')   || '[]');
-  const plannerRaw   = JSON.parse(localStorage.getItem(prefix + 'planner_raw')   || '[]');
-  const courseMap    = JSON.parse(localStorage.getItem(prefix + 'course_map')    || '{}');
-  const submittedIds = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids') || '[]'));
-  const syncedAt     = localStorage.getItem(prefix + 'synced_at');
-  const studentName  = localStorage.getItem(prefix + 'name') || 'Student';
+  const prefix      = 'nhq_' + activeUserId + '_';
+  const syncedAt    = localStorage.getItem(prefix + 'synced_at');
+  const studentName = localStorage.getItem(prefix + 'name') || 'Student';
+
+  // Try pre-processed assignments first (parent observer sync)
+  const preProcessed = localStorage.getItem(prefix + 'assignments');
+  if (preProcessed) {
+    assignments = JSON.parse(preProcessed).map(a => ({
+      ...a,
+      due: a.due ? new Date(a.due) : null,
+    }));
+    // Filter out parent-confirmed done
+    assignments = assignments.filter(a => !parentDone[a.id]);
+    const syncTime = syncedAt ? ' · synced ' + new Date(syncedAt).toLocaleTimeString() : '';
+    document.getElementById('last-sync').textContent = 'From extension' + syncTime;
+    renderAll();
+    showToast('Loaded ' + assignments.length + ' assignments for ' + studentName + ' ✓', 'ok');
+    return;
+  }
+
+  // Fall back to raw data (student session sync)
+  const upcomingRaw   = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw')   || '[]');
+  const missingRaw    = JSON.parse(localStorage.getItem(prefix + 'missing_raw')    || '[]');
+  const plannerRaw    = JSON.parse(localStorage.getItem(prefix + 'planner_raw')    || '[]');
+  const courseMap     = JSON.parse(localStorage.getItem(prefix + 'course_map')     || '{}');
+  const submittedIds  = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids')   || '[]'));
+  const markedDoneIds = new Set(JSON.parse(localStorage.getItem(prefix + 'marked_done_ids') || '[]'));
 
   if (!upcomingRaw.length && !missingRaw.length) {
-    showToast('No data for ' + studentName + '. Have them log into Canvas and sync.', 'err');
+    showToast('No data for ' + studentName + '. Open Canvas and sync.', 'err');
     return;
   }
 
   const now2 = new Date();
-  const academicYearStart = new Date(
-    now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1
-  );
-
+  const academicYearStart = new Date(now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1);
   const seen = new Set();
   assignments = [];
 
@@ -1305,45 +1321,30 @@ window.loadFromExtension = function(userId) {
     const id = String(a.id);
     if (seen.has(id)) return;
     seen.add(id);
-    assignments.push({
-      id, title: a.name || 'Untitled',
-      course: courseMap[String(a.course_id)] || 'Course ' + a.course_id,
-      due:    a.due_at ? new Date(a.due_at) : null,
-      status: 'missing', points: a.points_possible || null, source: 'api',
-    });
+    assignments.push({ id, title: a.name || 'Untitled', course: courseMap[String(a.course_id)] || '', due: a.due_at ? new Date(a.due_at) : null, status: 'missing', points: a.points_possible || null, source: 'api' });
   });
 
   upcomingRaw.filter(e => e.type === 'Assignment' || e.assignment).forEach(e => {
-    const a   = e.assignment || e;
-    const id  = String(a.id || e.id);
-    if (seen.has(id)) return;
+    const a = e.assignment || e;
+    const id = String(a.id || e.id);
+    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
     const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
     if (!due || due < academicYearStart) return;
     const title = a.name || a.title || e.title || '';
     if (!title) return;
-    // Skip if he already submitted this assignment
-    if (submittedIds.has(id)) return;
     seen.add(id);
-    assignments.push({
-      id, title,
-      course: courseMap[String(a.course_id || e.course_id)] || e.context_name || 'Course ' + (a.course_id || ''),
-      due, status: 'upcoming', points: a.points_possible || null, source: 'api',
-    });
+    assignments.push({ id, title, course: courseMap[String(a.course_id || e.course_id)] || e.context_name || '', due, status: 'upcoming', points: a.points_possible || null, source: 'api' });
   });
 
   plannerRaw.filter(p => p.plannable_type === 'assignment' && p.plannable).forEach(p => {
     const id = String(p.plannable_id);
-    if (seen.has(id)) return;
+    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
     const due = p.plannable.due_at ? new Date(p.plannable.due_at) : null;
     if (!due || due < academicYearStart) return;
     const title = p.plannable.title || p.plannable.name || '';
     if (!title) return;
     seen.add(id);
-    assignments.push({
-      id, title,
-      course: courseMap[String(p.course_id)] || 'Course ' + (p.course_id || ''),
-      due, status: 'upcoming', points: p.plannable.points_possible || null, source: 'api',
-    });
+    assignments.push({ id, title, course: courseMap[String(p.course_id)] || '', due, status: 'upcoming', points: p.plannable.points_possible || null, source: 'api' });
   });
 
   const titleDueSet = new Set();
@@ -1367,6 +1368,7 @@ window.loadFromExtension = function(userId) {
   renderAll();
   showToast('Loaded ' + assignments.length + ' assignments ✓', 'ok');
 };
+
 
 // Auto-load from extension data on page load
 document.addEventListener('DOMContentLoaded', () => {
