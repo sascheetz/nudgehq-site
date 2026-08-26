@@ -90,8 +90,8 @@
   .s-chill   { background: #f0fff4; border-color: #68d391; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
-  .stat-box.s-fire    .stat-num { color: var(--fire); }
-  .stat-box.s-missing .stat-num { color: var(--missing); }
+  .stat-box.s-fire    .stat-num { color: var(--soon); }
+  .stat-box.s-missing .stat-num { color: var(--fire); }
   .stat-box.s-student .stat-num { color: var(--student); }
 
   .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.92rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
@@ -583,6 +583,7 @@ Query: filter[]=submittable</pre></div></div>
 // ══════════════════════════════════════
 const DOMAIN = 'https://lakota.instructure.com';
 let assignments  = [];
+let activeUserId = null;
 let studentChecked = {};
 let studentSubTypes = {}; // submission types set by student
 let parentDone   = JSON.parse(localStorage.getItem('nhq_parent_done') || '{}');
@@ -1264,7 +1265,7 @@ window.loadFromExtension = function(userId) {
     return;
   }
 
-  activeUserId = userId || userIds[0];
+  activeUserId = userId || userIds[0]; // set global
 
   // Update child switcher UI
   const switcherSection = document.getElementById('child-switcher-section');
