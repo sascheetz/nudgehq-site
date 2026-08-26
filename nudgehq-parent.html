@@ -1254,7 +1254,10 @@ window.clearCreds = function() {
 // ── Load from Chrome Extension ──
 window.loadFromExtension = function(userId) {
   // Find available users
-  const userIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+  const allUserIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+  // Filter out parent observer account - only show student IDs
+  const PARENT_ID = '51186';
+  const userIds = allUserIds.filter(id => id !== PARENT_ID);
 
   if (!userIds.length) {
     showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
