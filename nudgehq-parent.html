@@ -1361,6 +1361,13 @@ window.loadFromExtension = function(userId) {
 
   assignments = assignments.filter(a => !parentDone[a.id]);
 
+  // Filter out missing assignments older than 60 days (not actionable)
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  assignments = assignments.filter(a => {
+    if (a.status === 'missing' && a.due && a.due < sixtyDaysAgo) return false;
+    return true;
+  });
+
   assignments.sort((a, b) => {
     const order = { zeroed: 0, missing: 1, upcoming: 2 };
     if ((order[a.status]??2) !== (order[b.status]??2)) return (order[a.status]??2) - (order[b.status]??2);
