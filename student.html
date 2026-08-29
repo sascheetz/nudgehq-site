@@ -118,10 +118,10 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
-.card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
-.card.u-soon  { box-shadow: -4px 0 0 #dd6b20, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-fire  { box-shadow: -4px 0 0 #f43f5e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-soon  { box-shadow: -4px 0 0 #f97316, 0 1px 4px rgba(0,0,0,0.05); }
 
-.card.u-chill { box-shadow: -4px 0 0 #38a169, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-chill { box-shadow: -4px 0 0 #22c55e, 0 1px 4px rgba(0,0,0,0.05); }
 .card.done { opacity: 0.45; }
 .card.done .c-title { text-decoration: line-through; color: var(--muted); }
 .card.c-zeroed  { border-color: #fc8181; border-left-color: #e53e3e; background: #fff5f5; }
@@ -309,7 +309,7 @@ function pillLabel(a, u) {
   if (localChecked[a.id]) return '✓ Done';
   const now = new Date(); now.setHours(0,0,0,0);
   const dy  = a.due ? Math.round((new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate()) - now) / 86400000) : 999;
-  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon: dy===1?'🟠 Due Tomorrow':'🟠 This Week', ok:'🟡 Next Week', chill:'🟢 Later' }[u] || '';
+  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[u] || '';
 }
 
 // ── Load from extension ──
