@@ -953,14 +953,11 @@ function getDateLabel(a) {
   if (diff < 0)   return '⚠️ Overdue';
   if (diff === 0) return '📅 Today';
   if (diff === 1) return '📅 Tomorrow';
-  // "This Week" = remaining school days up to and including this Friday
-  const dow = today.getDay(); // 0=Sun,...,5=Fri,6=Sat
+  const dow = today.getDay();
   const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
-  if (diff <= daysUntilFriday) return '📅 This Week — ' + a.due.toLocaleDateString('en-US', {weekday:'long'});
-  // Next week = school days of next Mon-Fri
-  if (diff <= daysUntilFriday + 7) return '📅 Next Week — ' + a.due.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
-  // Beyond next week — group by date
-  return '📅 ' + a.due.toLocaleDateString('en-US', {month:'long', day:'numeric'});
+  if (diff <= daysUntilFriday) return '📅 This Week';
+  if (diff <= daysUntilFriday + 7) return '📅 Next Week';
+  return '📅 Later';
 }
 
 function checkTokenExpiry() {

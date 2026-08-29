@@ -428,9 +428,11 @@ function renderCards() {
   if (missing.length) addGroup(wrap, '⚠️ Overdue / Missing', missing);
 
   if (upcoming.length) {
+    // Sort by due date first so same-bucket items are consecutive
+    const sorted = [...upcoming].sort((a, b) => (a.due || new Date(9e15)) - (b.due || new Date(9e15)));
     const groups = {};
     const order  = [];
-    upcoming.forEach(a => {
+    sorted.forEach(a => {
       const lbl = dateGroupLabel(a);
       if (!groups[lbl]) { groups[lbl] = []; order.push(lbl); }
       groups[lbl].push(a);
