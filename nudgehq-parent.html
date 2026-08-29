@@ -86,7 +86,7 @@
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
   .s-fire    { background: #fff8f0; border-color: #f6ad55; }
-  .s-student { background: #fffaf0; border-color: #f6ad55; }
+  .s-student { background: #f0fff4; border-color: #68d391; }
   .s-chill   { background: #f0fff4; border-color: #68d391; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
@@ -127,8 +127,12 @@
 
   /* Cards */
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
+  .card.u-fire  { border-left-color: #e53e3e; }
+  .card.u-soon  { border-left-color: #dd6b20; }
+  .card.u-ok    { border-left-color: #3182ce; }
+  .card.u-chill { border-left-color: #38a169; }
   .card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
   .card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
   .card.c-student-done { border-color: #f0d090; background: #fffbf0; }
@@ -1132,7 +1136,8 @@ function updateStats() {
   const checked  = Object.values(studentChecked).filter(Boolean).length;
   const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = (zeroed.length + missing.length)||'0';
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
-  const chkEl    = document.getElementById('s-checked'); if(chkEl) chkEl.textContent = checked||'0';
+  const submittedCount = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_submitted_ids') || '[]').length;
+  const chkEl    = document.getElementById('s-checked'); if(chkEl) chkEl.textContent = submittedCount||'0';
   const allEl    = document.getElementById('s-all');     if(allEl) allEl.textContent = assignments.filter(a=>!parentDone[a.id]).length||'0';
 }
 
