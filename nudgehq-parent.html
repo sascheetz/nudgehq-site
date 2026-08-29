@@ -131,7 +131,7 @@
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
   .card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
   .card.u-soon  { box-shadow: -4px 0 0 #dd6b20, 0 1px 4px rgba(0,0,0,0.05); }
-  .card.u-ok    { box-shadow: -4px 0 0 #d69e2e, 0 1px 4px rgba(0,0,0,0.05); }
+  
   .card.u-chill { box-shadow: -4px 0 0 #38a169, 0 1px 4px rgba(0,0,0,0.05); }
   .card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
   .card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
@@ -910,9 +910,8 @@ function urgency(a) {
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
-  if (days <= 0) return 'fire';
-  if (days <= 3) return 'soon';
-  if (days <= 7) return 'ok';
+  if (days <= 1) return 'fire';
+  if (days <= 5) return 'soon';
   return 'chill';
 }
 function countdown(a) {
