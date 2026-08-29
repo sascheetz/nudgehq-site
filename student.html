@@ -110,6 +110,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
   border-radius: 12px;
   padding: 14px;
   display: flex; flex-direction: column; gap: 8px;
@@ -119,8 +120,12 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
 .card.done { opacity: 0.45; }
 .card.done .c-title { text-decoration: line-through; color: var(--muted); }
-.card.c-zeroed  { border-color: #fc8181; background: #fff5f5; }
-.card.c-missing { border-color: #b794f4; background: #faf5ff; }
+.card.c-zeroed  { border-color: #fc8181; border-left-color: #e53e3e; background: #fff5f5; }
+.card.c-missing { border-color: #b794f4; border-left-color: #805ad5; background: #faf5ff; }
+.card.u-fire    { border-left-color: #e53e3e; }
+.card.u-soon    { border-left-color: #dd6b20; }
+.card.u-ok      { border-left-color: #3182ce; }
+.card.u-chill   { border-left-color: #38a169; }
 
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .c-course  { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -467,7 +472,7 @@ function makeCard(a) {
   const dueMap  = { zeroed:'due-zeroed', missing:'due-missing', fire:'due-fire', soon:'due-soon', ok:'due-ok', chill:'' };
 
   const card = document.createElement('div');
-  card.className = 'card' + (checked?' done':'') + (a.status==='zeroed'?' c-zeroed':'') + (a.status==='missing'?' c-missing':'');
+  card.className = 'card' + (checked?' done':'') + (a.status==='zeroed'?' c-zeroed':'') + (a.status==='missing'?' c-missing':'') + ' u-' + u;
 
   const top = document.createElement('div');
   top.className = 'card-top';

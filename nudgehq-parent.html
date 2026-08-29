@@ -1066,7 +1066,7 @@ function renderCards() {
 
     const card = document.createElement('div');
     const isZeroed = a.status === 'zeroed';
-    card.className = `card${isZeroed?' c-zeroed':''}${isMiss?' c-missing':''}${sDone&&!pDone?' c-student-done':''}${pDone?' c-parent-done':''}`;
+    card.className = `card${isZeroed?' c-zeroed':''}${isMiss?' c-missing':''}${sDone&&!pDone?' c-student-done':''}${pDone?' c-parent-done':''} u-${u}`;
     card.style.animationDelay = `${idx*30}ms`;
     card.innerHTML = `
       <div class="c-top">
