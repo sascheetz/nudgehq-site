@@ -59,9 +59,9 @@ aside {
 .stat-lbl  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
 .s-missing .stat-num { color: var(--fire); }
 .s-fire    .stat-num { color: var(--soon); }
-.s-check   .stat-num { color: var(--check); }
+.s-check   .stat-num { color: var(--chill); }
 .s-fire    .stat-num { color: var(--soon); }
-.s-check   .stat-num { color: var(--check); }
+.s-check   .stat-num { color: var(--chill); }
 
 /* Progress bar */
 .progress-wrap { display: flex; align-items: center; gap: 8px; }
@@ -118,10 +118,10 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
-.card.u-fire  { border-left-color: #e53e3e; }
-.card.u-soon  { border-left-color: #dd6b20; }
-.card.u-ok    { border-left-color: #3182ce; }
-.card.u-chill { border-left-color: #38a169; }
+.card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-soon  { box-shadow: -4px 0 0 #dd6b20, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-ok    { box-shadow: -4px 0 0 #3182ce, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-chill { box-shadow: -4px 0 0 #38a169, 0 1px 4px rgba(0,0,0,0.05); }
 .card.done { opacity: 0.45; }
 .card.done .c-title { text-decoration: line-through; color: var(--muted); }
 .card.c-zeroed  { border-color: #fc8181; border-left-color: #e53e3e; background: #fff5f5; }

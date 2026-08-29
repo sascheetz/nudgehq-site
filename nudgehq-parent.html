@@ -92,7 +92,7 @@
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--soon); }
   .stat-box.s-missing .stat-num { color: var(--fire); }
-  .stat-box.s-student .stat-num { color: var(--student); }
+  .stat-box.s-student .stat-num { color: var(--chill); }
 
   .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.92rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
   .guide-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -127,12 +127,12 @@
 
   /* Cards */
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
-  .card.u-fire  { border-left-color: #e53e3e; }
-  .card.u-soon  { border-left-color: #dd6b20; }
-  .card.u-ok    { border-left-color: #3182ce; }
-  .card.u-chill { border-left-color: #38a169; }
+  .card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
+  .card.u-soon  { box-shadow: -4px 0 0 #dd6b20, 0 1px 4px rgba(0,0,0,0.05); }
+  .card.u-ok    { box-shadow: -4px 0 0 #3182ce, 0 1px 4px rgba(0,0,0,0.05); }
+  .card.u-chill { box-shadow: -4px 0 0 #38a169, 0 1px 4px rgba(0,0,0,0.05); }
   .card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
   .card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
   .card.c-student-done { border-color: #f0d090; background: #fffbf0; }
