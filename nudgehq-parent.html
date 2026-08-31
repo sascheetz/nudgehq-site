@@ -1061,7 +1061,7 @@ function renderCards() {
     const _today2 = new Date(); _today2.setHours(0,0,0,0);
     const _days2  = a.due ? Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate()) - _today2) / 86400000) : 999;
     const _soonLabel = '🟠 Due Soon';
-    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: days===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[pDone?'done':u] || '';
+    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: _days2===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[pDone?'done':u] || '';
     const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
