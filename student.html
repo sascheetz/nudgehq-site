@@ -118,14 +118,16 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   transition: box-shadow 0.2s, transform 0.15s;
 }
 .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
-.card.u-fire  { box-shadow: -4px 0 0 #f43f5e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.c-missing { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.c-zeroed  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
 .card.u-soon  { box-shadow: -4px 0 0 #f97316, 0 1px 4px rgba(0,0,0,0.05); }
 
 .card.u-chill { box-shadow: -4px 0 0 #22c55e, 0 1px 4px rgba(0,0,0,0.05); }
 .card.done { opacity: 0.45; }
 .card.done .c-title { text-decoration: line-through; color: var(--muted); }
 .card.c-zeroed  { border-color: #fc8181; border-left-color: #e53e3e; background: #fff5f5; }
-.card.c-missing { border-color: #b794f4; border-left-color: #805ad5; background: #faf5ff; }
+.card.c-missing { border-color: #fc8181; background: #fff5f5; }
 .card.u-fire    { border-left-color: #e53e3e; }
 .card.u-soon    { border-left-color: #dd6b20; }
 .card.u-ok      { border-left-color: #3182ce; }
@@ -139,7 +141,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
 .pill { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
 .p-zeroed  { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
-.p-missing { background: #faf5ff; color: #553c9a; border: 1px solid #b794f4; }
+.p-missing { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
 .p-fire    { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
 .p-soon    { background: #fffaf0; color: #c05621; border: 1px solid #f6ad55; }
 .p-ok      { background: #ebf8ff; color: #2b6cb0; border: 1px solid #63b3ed; }
@@ -252,9 +254,9 @@ function urgency(a) {
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
-  if (days <= 1) return 'fire';
-  if (days <= 5) return 'soon';
-  return 'chill';
+  if (days <= 2) return 'fire';   // due today, tomorrow, or Monday
+  if (days <= 5) return 'soon';   // due within 5 days
+  return 'chill';                 // 6+ days away
 }
 
 function dateGroupLabel(a) {
@@ -309,7 +311,7 @@ function pillLabel(a, u) {
   if (localChecked[a.id]) return '✓ Done';
   const now = new Date(); now.setHours(0,0,0,0);
   const dy  = a.due ? Math.round((new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate()) - now) / 86400000) : 999;
-  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[u] || '';
+  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: days===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[u] || '';
 }
 
 // ── Load from extension ──

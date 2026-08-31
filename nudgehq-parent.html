@@ -129,12 +129,14 @@
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
-  .card.u-fire  { box-shadow: -4px 0 0 #f43f5e, 0 1px 4px rgba(0,0,0,0.05); }
+  .card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.c-missing { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
+.card.c-zeroed  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
   .card.u-soon  { box-shadow: -4px 0 0 #f97316, 0 1px 4px rgba(0,0,0,0.05); }
   
   .card.u-chill { box-shadow: -4px 0 0 #22c55e, 0 1px 4px rgba(0,0,0,0.05); }
   .card.c-zeroed  { border-color: #f5c5bf; background: #fff8f8; }
-  .card.c-missing { border-color: #d9aee8; background: #fdf8ff; }
+  .card.c-missing { border-color: #fc8181; background: #fff5f5; }
   .card.c-student-done { border-color: #f0d090; background: #fffbf0; }
   .card.c-parent-done  { opacity: 0.38; }
   .card.c-parent-done .c-title { text-decoration: line-through; }
@@ -146,7 +148,7 @@
 
   .pill { font-size: 0.95rem; font-weight: 500; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.07em; }
   .p-zeroed  { background: #fdf0ee; color: var(--fire);    border: 1px solid #f5c5bf; }
-  .p-missing { background: #f9f0fb; color: var(--missing); border: 1px solid #d9aee8; }
+  .p-missing { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
   .p-fire    { background: rgba(255,92,92,0.12);   color: var(--fire);    border: 1px solid rgba(255,92,92,0.3); }
   .p-soon    { background: rgba(255,144,64,0.12);  color: var(--soon);    border: 1px solid rgba(255,144,64,0.3); }
   .p-ok      { background: rgba(249,115,22,0.12);  color: #ea580c;        border: 1px solid rgba(249,115,22,0.3); }
@@ -910,9 +912,9 @@ function urgency(a) {
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
-  if (days <= 1) return 'fire';
-  if (days <= 5) return 'soon';
-  return 'chill';
+  if (days <= 2) return 'fire';   // due today, tomorrow, or Monday
+  if (days <= 5) return 'soon';   // due within 5 days
+  return 'chill';                 // 6+ days away
 }
 function countdown(a) {
   if (a.status==='zeroed')  return 'Graded as zero — never submitted';
@@ -1059,7 +1061,7 @@ function renderCards() {
     const _today2 = new Date(); _today2.setHours(0,0,0,0);
     const _days2  = a.due ? Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate()) - _today2) / 86400000) : 999;
     const _soonLabel = '🟠 Due Soon';
-    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire:'🔴 Due Today', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[pDone?'done':u] || '';
+    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: days===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[pDone?'done':u] || '';
     const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
