@@ -313,7 +313,7 @@
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
       <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
-      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">All</div></div>
+      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
     </div>
   </div>
 
@@ -321,6 +321,7 @@
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
 
     <button class="btn btn-secondary" onclick="window.sendGeneralReminder && window.sendGeneralReminder()">📲 Send General Reminder</button>
@@ -495,6 +496,7 @@ Query: filter[]=submittable</pre></div></div>
       <div class="field"><label>Apps Script Web App URL</label><input type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
       <p class="hint">Set up once — assignments are appended to your Google Sheet on every export. <button class="ilink" onclick="openModal('sheets-guide-modal')">Setup guide →</button></p>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
     </div>
 
@@ -988,7 +990,69 @@ function checkTokenExpiry() {
   }
 }
 
-function renderAll() { renderBanners(); renderCards(); updateStats(); checkTokenExpiry(); }
+function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); }
+
+// ── HAC Zeros ──
+function renderHACZeros() {
+  const zeros    = JSON.parse(localStorage.getItem('nhq_hac_zeros') || '[]');
+  const syncedAt = localStorage.getItem('nhq_hac_synced_at');
+  
+  let section = document.getElementById('hac-zeros-section');
+  if (!section) {
+    section = document.createElement('div');
+    section.id = 'hac-zeros-section';
+    section.style.cssText = 'margin: 0 0 16px 0;';
+    const grid = document.getElementById('grid');
+    grid.parentNode.insertBefore(section, grid);
+  }
+  
+  if (!zeros.length) {
+    section.innerHTML = '';
+    return;
+  }
+
+  const syncStr = syncedAt ? ' · synced ' + new Date(syncedAt).toLocaleTimeString() : '';
+  
+  section.innerHTML = `
+    <div style="margin:0 0 12px;background:#fff5f5;border:1px solid #fc8181;border-radius:10px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <strong style="color:#c53030;font-size:0.9rem;">📊 HAC Grades — Zeros & Ungraded${syncStr}</strong>
+        <span style="font-size:0.78rem;color:#9aa5b4;">${zeros.length} assignment${zeros.length===1?'':'s'}</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+        <thead>
+          <tr style="border-bottom:1px solid #fc8181;">
+            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Course</th>
+            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Assignment</th>
+            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Due</th>
+            <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">Score</th>
+            <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">%</th>
+            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Canvas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${zeros.map(z => {
+            const scoreColor = z.isZero ? '#c53030' : z.isBlank ? '#dd6b20' : '#c53030';
+            const cs = z.canvasStatus;
+            const canvasCell = cs === 'submitted'     ? '<span style="color:#38a169;font-weight:600;">✓ Submitted</span>' :
+                               cs === 'missing'       ? '<span style="color:#e53e3e;font-weight:600;">⚠️ Missing</span>' :
+                               cs === 'upcoming'      ? '<span style="color:#dd6b20;">📅 Not submitted yet</span>' :
+                               cs === 'not_in_canvas' ? '<span style="color:#9aa5b4;">📄 Paper only</span>' :
+                               '<span style="color:#9aa5b4;">—</span>';
+            return '<tr style="border-bottom:1px solid #fee2e2;">' +
+              '<td style="padding:6px 8px;color:#4a5568;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(z.course) + '</td>' +
+              '<td style="padding:6px 8px;font-weight:500;color:#1a1d23;">' + esc(z.assignment) + '</td>' +
+              '<td style="padding:6px 8px;color:#9aa5b4;">' + esc(z.dateDue||'') + '</td>' +
+              '<td style="padding:6px 8px;text-align:right;font-weight:600;color:' + scoreColor + ';">' + esc(z.score) + '</td>' +
+              '<td style="padding:6px 8px;text-align:right;font-weight:600;color:' + scoreColor + ';">' + esc(z.pct) + '</td>' +
+              '<td style="padding:6px 8px;font-size:0.78rem;">' + canvasCell + '</td>' +
+              '</tr>';
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
 
 function renderBanners() {
   // Missing
@@ -1042,9 +1106,27 @@ function renderCards() {
 
   if (!list.length) { document.getElementById('empty').style.display='block'; return; }
 
+  // Split upcoming into graded (post_to_sis) and practice
+  const gradedUpcoming   = list.filter(a => a.status === 'upcoming' && a.postToSis !== false);
+  const practiceUpcoming = list.filter(a => a.status === 'upcoming' && a.postToSis === false);
+  const nonUpcoming      = list.filter(a => a.status !== 'upcoming');
+  const reorderedList    = [...nonUpcoming];
+  if (gradedUpcoming.length && practiceUpcoming.length) reorderedList.push({ __sectionHeader: '📊 Graded Assignments' });
+  reorderedList.push(...gradedUpcoming);
+  if (practiceUpcoming.length) { reorderedList.push({ __sectionHeader: '📝 Practice & Formative' }); reorderedList.push(...practiceUpcoming); }
+
   // Group by date label
   let lastDateLabel = null;
-  list.forEach((a,idx) => {
+  reorderedList.forEach((a,idx) => {
+    if (a.__sectionHeader) {
+      const sh = document.createElement('div');
+      sh.className = 'date-header';
+      sh.style.cssText = 'background:#f8f9fa;color:#4a5568;font-size:0.8rem;padding:8px 0;margin:12px 0 0;';
+      sh.textContent = a.__sectionHeader;
+      grid.appendChild(sh);
+      lastDateLabel = null;
+      return;
+    }
     const dateLabel = getDateLabel(a);
     if (dateLabel !== lastDateLabel) {
       const header = document.createElement('div');
@@ -1134,7 +1216,7 @@ function updateStats() {
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
   const submittedCount = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_submitted_ids') || '[]').length;
   const chkEl    = document.getElementById('s-checked'); if(chkEl) chkEl.textContent = submittedCount||'0';
-  const allEl    = document.getElementById('s-all');     if(allEl) allEl.textContent = assignments.filter(a=>!parentDone[a.id]).length||'0';
+  const allEl    = document.getElementById('s-all');     if(allEl) allEl.textContent = assignments.filter(a=>!parentDone[a.id] && a.due && Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/86400000)<=7).length||'0';
 }
 
 // ══════════════════════════════════════

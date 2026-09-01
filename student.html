@@ -208,7 +208,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-today">—</div>  <div class="stat-lbl">Due Today</div></div>
       <div class="stat-box s-check">  <div class="stat-num" id="s-done">—</div>   <div class="stat-lbl">Submitted</div></div>
-      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">All</div></div>
+      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
     </div>
   </div>
 </aside>
@@ -417,7 +417,7 @@ function updateStats() {
   document.getElementById('s-missing').textContent = assignments.filter(a => a.status === 'missing').length || '0';
   document.getElementById('s-today').textContent   = assignments.filter(a => urgency(a) === 'fire' && a.status === 'upcoming').length || '0';
   document.getElementById('s-done').textContent    = checked || '0';
-  const allEl = document.getElementById('s-all'); if(allEl) allEl.textContent = assignments.length || '0';
+  const allEl = document.getElementById('s-all'); if(allEl) { const tod=new Date(); tod.setHours(0,0,0,0); allEl.textContent = assignments.filter(a=>a.due&&Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-tod)/86400000)<=7).length||'0'; }
 }
 
 function renderCards() {
@@ -435,16 +435,43 @@ function renderCards() {
   if (missing.length) addGroup(wrap, '⚠️ Overdue / Missing', missing);
 
   if (upcoming.length) {
-    // Sort by due date first so same-bucket items are consecutive
-    const sorted = [...upcoming].sort((a, b) => (a.due || new Date(9e15)) - (b.due || new Date(9e15)));
-    const groups = {};
-    const order  = [];
-    sorted.forEach(a => {
-      const lbl = dateGroupLabel(a);
-      if (!groups[lbl]) { groups[lbl] = []; order.push(lbl); }
-      groups[lbl].push(a);
-    });
-    order.forEach(lbl => addGroup(wrap, lbl, groups[lbl]));
+    const sorted   = [...upcoming].sort((a, b) => (a.due || new Date(9e15)) - (b.due || new Date(9e15)));
+    const graded   = sorted.filter(a => a.postToSis !== false);
+    const practice = sorted.filter(a => a.postToSis === false);
+
+    // Graded section
+    if (graded.length) {
+      if (practice.length) {
+        const gh = document.createElement('div');
+        gh.className = 'section-head';
+        gh.style.cssText = 'background:#f8f9fa;color:#4a5568;';
+        gh.textContent = '📊 Graded Assignments';
+        wrap.appendChild(gh);
+      }
+      const gGroups = {}; const gOrder = [];
+      graded.forEach(a => {
+        const lbl = dateGroupLabel(a);
+        if (!gGroups[lbl]) { gGroups[lbl] = []; gOrder.push(lbl); }
+        gGroups[lbl].push(a);
+      });
+      gOrder.forEach(lbl => addGroup(wrap, lbl, gGroups[lbl]));
+    }
+
+    // Practice section
+    if (practice.length) {
+      const ph = document.createElement('div');
+      ph.className = 'section-head';
+      ph.style.cssText = 'background:#f8f9fa;color:#4a5568;margin-top:12px;';
+      ph.textContent = '📝 Practice & Formative';
+      wrap.appendChild(ph);
+      const pGroups = {}; const pOrder = [];
+      practice.forEach(a => {
+        const lbl = dateGroupLabel(a);
+        if (!pGroups[lbl]) { pGroups[lbl] = []; pOrder.push(lbl); }
+        pGroups[lbl].push(a);
+      });
+      pOrder.forEach(lbl => addGroup(wrap, lbl, pGroups[lbl]));
+    }
   }
 
   if (done.length) addGroup(wrap, '✓ Completed', done);
