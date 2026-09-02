@@ -153,7 +153,7 @@
   .p-missing { background: #fff5f5; color: #c53030; border: 1px solid #fc8181; }
   .p-fire    { background: rgba(255,92,92,0.12);   color: var(--fire);    border: 1px solid rgba(255,92,92,0.3); }
   .p-soon    { background: rgba(255,144,64,0.12);  color: var(--soon);    border: 1px solid rgba(255,144,64,0.3); }
-  .p-ok      { background: rgba(249,115,22,0.12);  color: #ea580c;        border: 1px solid rgba(249,115,22,0.3); }
+  .p-ok      { background: rgba(236,201,75,0.15);  color: #b7791f;        border: 1px solid rgba(236,201,75,0.4); }
   .p-chill   { background: rgba(62,207,142,0.1);   color: var(--chill);   border: 1px solid rgba(62,207,142,0.25); }
   .p-done    { background: var(--surface2);         color: var(--muted);   border: 1px solid var(--border); }
   .p-student { background: rgba(245,166,35,0.12);  color: var(--student); border: 1px solid rgba(245,166,35,0.3); }
@@ -1388,12 +1388,13 @@ window.loadFromExtension = function(userId) {
     }));
     // Filter out parent-confirmed done
     assignments = assignments.filter(a => !parentDone[a.id]);
-    // Filter out missing assignments older than 60 days
-    const _sixtyAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    // Filter out missing assignments older than 30 days
+    const _thirtyAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     assignments = assignments.filter(a => {
-      if (a.status === 'missing' && a.due) {
+      if (a.status === 'missing') {
+        if (!a.due) return true; // keep if no due date
         const d = a.due instanceof Date ? a.due : new Date(a.due);
-        if (d < _sixtyAgo) return false;
+        if (d < _thirtyAgo) return false;
       }
       return true;
     });
@@ -1471,12 +1472,13 @@ window.loadFromExtension = function(userId) {
 
   assignments = assignments.filter(a => !parentDone[a.id]);
 
-  // Filter out missing assignments older than 60 days (not actionable)
-  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+  // Filter out missing assignments older than 30 days
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   assignments = assignments.filter(a => {
-    if (a.status === 'missing' && a.due) {
+    if (a.status === 'missing') {
+      if (!a.due) return true;
       const dueDate = a.due instanceof Date ? a.due : new Date(a.due);
-      if (dueDate < sixtyDaysAgo) return false;
+      if (dueDate < thirtyDaysAgo) return false;
     }
     return true;
   });
