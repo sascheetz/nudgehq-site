@@ -252,7 +252,9 @@ function urgency(a) {
   if (!a.due) return 'chill';
   const now    = new Date();
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  // Use local date to avoid UTC timezone issues
+  const dueLoc = typeof a.due === 'string' ? new Date(a.due) : a.due;
+  const dueDay = new Date(dueLoc.getFullYear(), dueLoc.getMonth(), dueLoc.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
   if (days <= 2) return 'fire';   // due today, tomorrow, or Monday
   if (days <= 5) return 'soon';   // due within 5 days
@@ -263,7 +265,8 @@ function dateGroupLabel(a) {
   if (!a.due) return '📅 Upcoming';
   const now   = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const due   = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  const dueLoc2 = typeof a.due === 'string' ? new Date(a.due) : a.due;
+  const due   = new Date(dueLoc2.getFullYear(), dueLoc2.getMonth(), dueLoc2.getDate());
   const diff  = Math.round((due - today) / 86400000);
   if (diff < 0)  return '⚠️ Overdue';
   if (diff === 0) return '📅 Today';
@@ -289,7 +292,9 @@ function dueLabel(a) {
   if (!a.due) return 'No due date';
   const now    = new Date();
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dueDay = new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate());
+  // Use local date to avoid UTC timezone issues
+  const dueLoc = typeof a.due === 'string' ? new Date(a.due) : a.due;
+  const dueDay = new Date(dueLoc.getFullYear(), dueLoc.getMonth(), dueLoc.getDate());
   const diff   = Math.round((dueDay - today) / 86400000);
   const dateStr = a.due.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
   const timeStr = a.due.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
