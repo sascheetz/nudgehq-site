@@ -348,7 +348,7 @@
     <h2>Assignments</h2>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span class="last-sync" id="last-sync">Not yet synced</span>
-      <button onclick="openDrawer()" style="background:none;border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-family:var(--mono);font-size:0.6rem;color:var(--subink);cursor:pointer;white-space:nowrap;" onmouseover="this.style.color='var(--ink)';this.style.borderColor='var(--border2)'" onmouseout="this.style.color='var(--subink)';this.style.borderColor='var(--border)'">⚙ Settings</button>
+      <button onclick="_drawerUserInitiated=true;openDrawer(true)" style="background:none;border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-family:var(--mono);font-size:0.6rem;color:var(--subink);cursor:pointer;white-space:nowrap;" onmouseover="this.style.color='var(--ink)';this.style.borderColor='var(--border2)'" onmouseout="this.style.color='var(--subink)';this.style.borderColor='var(--border)'">⚙ Settings</button>
     </div>
   </div>
 
@@ -1493,7 +1493,10 @@ window.addEventListener('nhq_data_ready', () => {
 // ══════════════════════════════════════
 // SETTINGS DRAWER
 // ══════════════════════════════════════
-function openDrawer() {
+let _drawerUserInitiated = false;
+function openDrawer(userInitiated) {
+  if (!userInitiated && !_drawerUserInitiated) return; // block auto-opens
+  _drawerUserInitiated = false;
   const fields = ['proxy-url','api-token','student-name','fb-url','fb-key','tw-sid','tw-token','tw-from','tw-to'];
   fields.forEach(id => {
     const el  = document.getElementById(id);
