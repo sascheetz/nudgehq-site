@@ -915,7 +915,7 @@ function urgency(a) {
   const now    = new Date();
   const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   // Use local date to avoid UTC timezone issues
-  const dueLoc = typeof a.due === 'string' ? new Date(a.due) : a.due;
+  const dueLoc = (a.due instanceof Date) ? a.due : new Date(a.due);
   const dueDay = new Date(dueLoc.getFullYear(), dueLoc.getMonth(), dueLoc.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
   if (days <= 2) return 'fire';   // due today, tomorrow, or Monday
@@ -1146,7 +1146,8 @@ function renderCards() {
     const isMiss = a.status==='missing';
 
     const _today2 = new Date(); _today2.setHours(0,0,0,0);
-    const _days2  = a.due ? Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate()) - _today2) / 86400000) : 999;
+    const _dueObj2 = a.due ? (a.due instanceof Date ? a.due : new Date(a.due)) : null;
+    const _days2  = _dueObj2 ? Math.round((new Date(_dueObj2.getFullYear(),_dueObj2.getMonth(),_dueObj2.getDate()) - _today2) / 86400000) : 999;
     const _soonLabel = '🟠 Due Soon';
     const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: _days2===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[pDone?'done':u] || '';
     const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
