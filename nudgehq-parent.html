@@ -86,6 +86,7 @@
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
   .s-fire    { background: #fff8f0; border-color: #f6ad55; }
+  .s-soon    { background: #fff8f0; border-color: #f6ad55; }
   .s-student { background: #f0fff4; border-color: #68d391; }
   .s-chill   { background: #f0fff4; border-color: #68d391; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
@@ -312,8 +313,9 @@
     <div class="stat-grid">
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
-      <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
+      <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
       <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
+      <div class="stat-box s-student" style="grid-column:1/-1"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
     </div>
   </div>
 
@@ -1216,10 +1218,12 @@ function updateStats() {
   // Missing count shows ALL missing from Canvas regardless of student check-offs
   // (student checking off doesn't mean it was actually submitted)
   const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]);
-  const fire     = assignments.filter(a=>urgency(a)==='fire'&&a.status!=='missing'&&a.status!=='zeroed'&&!parentDone[a.id]);
+  const fire     = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===0 && a.status==='upcoming' && !parentDone[a.id]; });
   const checked  = Object.values(studentChecked).filter(Boolean).length;
   const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = (zeroed.length + missing.length)||'0';
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
+  const tomorrow  = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===1 && a.status==='upcoming' && !parentDone[a.id]; });
+  const tomEl    = document.getElementById('s-tomorrow'); if(tomEl) tomEl.textContent = tomorrow.length||'0';
   const submittedCount = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_submitted_ids') || '[]').length;
   const chkEl    = document.getElementById('s-checked'); if(chkEl) chkEl.textContent = submittedCount||'0';
   const allEl    = document.getElementById('s-all');     if(allEl) allEl.textContent = assignments.filter(a=>!parentDone[a.id] && a.due && Math.round((new Date(a.due.getFullYear(),a.due.getMonth(),a.due.getDate())-new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/86400000)<=7).length||'0';
