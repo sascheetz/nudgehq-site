@@ -86,9 +86,10 @@
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
   .s-fire    { background: #fff8f0; border-color: #f6ad55; }
-  .s-soon    { background: #fff8f0; border-color: #f6ad55; }
+  .s-soon    { background: #fffff0; border-color: #ecc94b; }
   .s-student { background: #f8f9fa; border-color: #c8cdd4; }
   .s-chill   { background: #f0fff4; border-color: #68d391; }
+  .s-chill   .stat-num { color: #276749; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--soon); }
@@ -315,7 +316,7 @@
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
       <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
-      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
+      <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
       <div class="stat-box s-student" style="grid-column:1/-1"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
     </div>
   </div>
@@ -364,8 +365,8 @@
     <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
   </div>
 
-  <!-- Missing banner -->
-  <div id="missing-banner">
+  <!-- Missing banner (hidden) -->
+  <div id="missing-banner" style="display:none!important">
     <div class="mb-text" style="flex:1">
       <strong id="mb-title">⚠️ Missing assignments detected</strong>
       <span id="mb-sub">These are officially unsubmitted in Canvas.</span>
@@ -1478,10 +1479,11 @@ window.loadFromExtension = function(userId) {
     if (a.status === 'missing') {
       if (!a.due) return true;
       const dueDate = a.due instanceof Date ? a.due : new Date(a.due);
-      if (dueDate < thirtyDaysAgo) return false;
+      if (dueDate < thirtyDaysAgo) { console.log('[NHQ] Filtered old missing:', a.title, dueDate); return false; }
     }
     return true;
   });
+  console.log('[NHQ] After 30-day filter, missing count:', assignments.filter(a=>a.status==='missing').length);
 
   assignments.sort((a, b) => {
     const order = { zeroed: 0, missing: 1, upcoming: 2 };
