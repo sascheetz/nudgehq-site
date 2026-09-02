@@ -1386,6 +1386,15 @@ window.loadFromExtension = function(userId) {
     }));
     // Filter out parent-confirmed done
     assignments = assignments.filter(a => !parentDone[a.id]);
+    // Filter out missing assignments older than 60 days
+    const _sixtyAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    assignments = assignments.filter(a => {
+      if (a.status === 'missing' && a.due) {
+        const d = a.due instanceof Date ? a.due : new Date(a.due);
+        if (d < _sixtyAgo) return false;
+      }
+      return true;
+    });
     const syncTime = syncedAt ? ' · synced ' + new Date(syncedAt).toLocaleTimeString() : '';
     document.getElementById('last-sync').textContent = 'From extension' + syncTime;
     renderAll();
