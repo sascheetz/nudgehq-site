@@ -256,8 +256,9 @@ function urgency(a) {
   const dueLoc = typeof a.due === 'string' ? new Date(a.due) : a.due;
   const dueDay = new Date(dueLoc.getFullYear(), dueLoc.getMonth(), dueLoc.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
-  if (days <= 2) return 'fire';   // due today, tomorrow, or Monday
-  if (days <= 5) return 'soon';   // due within 5 days
+  if (days <= 0) return 'fire';   // due today
+  if (days <= 1) return 'soon';   // due tomorrow
+  if (days <= 5) return 'ok';     // this week
   return 'chill';                 // 6+ days away
 }
 
@@ -316,7 +317,7 @@ function pillLabel(a, u) {
   if (localChecked[a.id]) return '✓ Done';
   const now = new Date(); now.setHours(0,0,0,0);
   const dy  = a.due ? Math.round((new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate()) - now) / 86400000) : 999;
-  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: days===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Soon', ok:'🟠 Due Soon', chill:'🟢 Upcoming' }[u] || '';
+  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: days===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Tomorrow', ok:'🟡 This Week', chill:'🟢 Upcoming' }[u] || '';
 }
 
 // ── Load from extension ──
