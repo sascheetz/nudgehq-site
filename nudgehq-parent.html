@@ -86,7 +86,8 @@
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
   .s-fire    { background: #fff8f0; border-color: #f6ad55; }
-  .s-soon    { background: #fffff0; border-color: #ecc94b; }
+  .s-soon    { background: #fffde7; border-color: #ffd600; }
+  .s-soon    .stat-num { color: #ffd600; }
   .s-student { background: #f8f9fa; border-color: #c8cdd4; }
   .s-chill   { background: #f0fff4; border-color: #68d391; }
   .s-chill   .stat-num { color: #276749; }
@@ -1223,7 +1224,7 @@ function updateStats() {
   const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]);
   const fire     = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===0 && a.status==='upcoming' && !parentDone[a.id]; });
   const checked  = Object.values(studentChecked).filter(Boolean).length;
-  const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = (zeroed.length + missing.length)||'0';
+  const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = missing.length||'0';
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
   const tomorrow  = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===1 && a.status==='upcoming' && !parentDone[a.id]; });
   const tomEl    = document.getElementById('s-tomorrow'); if(tomEl) tomEl.textContent = tomorrow.length||'0';
