@@ -1392,6 +1392,7 @@ window.loadFromExtension = function(userId) {
   // Fall back to raw data (student session sync)
   const upcomingRaw   = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw')   || '[]');
   const missingRaw    = JSON.parse(localStorage.getItem(prefix + 'missing_raw')    || '[]');
+  const zerosRaw      = JSON.parse(localStorage.getItem(prefix + 'zeros_raw')      || '[]');
   const plannerRaw    = JSON.parse(localStorage.getItem(prefix + 'planner_raw')    || '[]');
   const courseMap     = JSON.parse(localStorage.getItem(prefix + 'course_map')     || '{}');
   const submittedIds  = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids')   || '[]'));
@@ -1406,6 +1407,14 @@ window.loadFromExtension = function(userId) {
   const academicYearStart = new Date(now2.getMonth() >= 7 ? now2.getFullYear() : now2.getFullYear() - 1, 7, 1);
   const seen = new Set();
   assignments = [];
+
+  // Add graded zeros first
+  zerosRaw.forEach(a => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({ id, title: a.title || 'Untitled', course: a.course || courseMap[String(a.course_id)] || '', due: a.due ? new Date(a.due) : null, status: 'zeroed', points: a.points || null, grade: a.grade, score: a.score, source: 'api' });
+  });
 
   missingRaw.forEach(a => {
     const id = String(a.id);
