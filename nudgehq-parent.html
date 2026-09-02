@@ -1297,7 +1297,7 @@ updateStats();
 // Auto-open settings drawer if no token saved
 document.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('nhq_cred_api-token');
-  if (!token) setTimeout(() => openDrawer && openDrawer(), 300);
+  // Settings drawer no longer auto-opens
 });
 
 // ══════════════════════════════════════
