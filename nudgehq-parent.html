@@ -86,6 +86,8 @@
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
   .s-fire    { background: #fff8f0; border-color: #f6ad55; }
+  .s-zeroed  { background: #fff5f5; border-color: #fc8181; }
+  .s-zeroed  .stat-num { color: var(--fire); }
   .s-soon    { background: #fffde7; border-color: #ffd600; }
   .s-soon    .stat-num { color: #ffd600; }
   .s-student { background: #f8f9fa; border-color: #c8cdd4; }
@@ -95,7 +97,7 @@
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--soon); }
   .stat-box.s-missing .stat-num { color: var(--fire); }
-  .stat-box.s-student .stat-num { color: var(--chill); }
+  .stat-box.s-student .stat-num { color: #1a1d23; }
 
   .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.92rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
   .guide-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -316,6 +318,7 @@
     <div class="stat-grid">
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
+      <div class="stat-box s-zeroed"> <div class="stat-num" id="s-zeros">—</div>  <div class="stat-lbl">Graded Zero</div></div>
       <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
       <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
       <div class="stat-box s-student" style="grid-column:1/-1"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
@@ -1226,6 +1229,7 @@ function updateStats() {
   const checked  = Object.values(studentChecked).filter(Boolean).length;
   const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = missing.length||'0';
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
+  const zerosEl  = document.getElementById('s-zeros');   if(zerosEl) zerosEl.textContent = zeroed.length||'0';
   const tomorrow  = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===1 && a.status==='upcoming' && !parentDone[a.id]; });
   const tomEl    = document.getElementById('s-tomorrow'); if(tomEl) tomEl.textContent = tomorrow.length||'0';
   const submittedCount = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_submitted_ids') || '[]').length;
