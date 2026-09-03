@@ -1524,6 +1524,52 @@ window.addEventListener('nhq_data_ready', () => {
   console.log('[Nudge HQ] Bridge data received, loading...');
   setTimeout(() => window.loadFromExtension && window.loadFromExtension(), 100);
 });
+
+// ── Load from Cloud ──
+window.loadFromCloud = async function() {
+  try {
+    showToast('Loading from cloud...', '');
+    // Use JSONP to bypass CORS restriction
+    const json = await new Promise((resolve, reject) => {
+      const cbName = 'nhq_cb_' + Date.now();
+      window[cbName] = (data) => { delete window[cbName]; document.head.removeChild(s); resolve(data); };
+      const s = document.createElement('script');
+      s.src = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec?userId=50904&callback=' + cbName;
+      s.onerror = () => { delete window[cbName]; reject(new Error('Script load failed')); };
+      document.head.appendChild(s);
+      setTimeout(() => { if(window[cbName]) { delete window[cbName]; reject(new Error('Timeout')); } }, 10000);
+    });
+    if (!json.ok) { showToast('No cloud data yet. Sync from Canvas first.', 'err'); return; }
+    const d = json.data;
+    const prefix = 'nhq_50904_';
+    localStorage.setItem(prefix + 'upcoming_raw',    d.upcoming_raw    || '[]');
+    localStorage.setItem(prefix + 'missing_raw',     d.missing_raw     || '[]');
+    localStorage.setItem(prefix + 'zeros_raw',       d.zeros_raw       || '[]');
+    localStorage.setItem(prefix + 'course_map',      d.course_map      || '{}');
+    localStorage.setItem(prefix + 'submitted_ids',   d.submitted_ids   || '[]');
+    localStorage.setItem(prefix + 'marked_done_ids', d.marked_done_ids || '[]');
+    localStorage.setItem(prefix + 'synced_at',       d.synced_at       || '');
+    localStorage.setItem(prefix + 'name',            d.name            || 'Alex');
+    localStorage.setItem('nhq_user_ids', JSON.stringify(['50904']));
+    window.loadFromExtension && window.loadFromExtension();
+    showToast('Loaded from cloud ✓', 'ok');
+  } catch(e) {
+    showToast('Cloud load failed: ' + e.message, 'err');
+  }
+};
+
+// ── Load HAC Data ──
+window.loadHACData = function() {
+  const zeros    = JSON.parse(localStorage.getItem('nhq_hac_zeros') || '[]');
+  const syncedAt = localStorage.getItem('nhq_hac_synced_at');
+  if (!zeros.length) {
+    showToast('No HAC data yet. Open HAC Classwork and let Nudge HQ sync.', 'err');
+    return;
+  }
+  renderHACZeros();
+  showToast('Loaded ' + zeros.length + ' HAC entries ✓', 'ok');
+};
+
 </script>
 <script>
 
