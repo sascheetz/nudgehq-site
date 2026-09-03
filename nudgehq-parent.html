@@ -1019,9 +1019,19 @@ function renderCourseChips() {
   if (!courses.length) { wrap.innerHTML = ''; return; }
   
   const currentCourse = activeCourseFilter;
-  window._nhqCourses = courses; // store for click handlers
-  wrap.innerHTML = '<span class="chip' + (!currentCourse ? ' active' : '') + '" onclick="setCourseFilter(null,this)">All Courses</span>' +
-    courses.map((c,i) => '<span class="chip' + (currentCourse === c ? ' active' : '') + '" onclick="setCourseFilter(_nhqCourses[' + i + '],this)">' + esc(c.split('-')[0].trim()) + '</span>').join('');
+  wrap.innerHTML = '';
+  const allSpan = document.createElement('span');
+  allSpan.className = 'chip' + (!currentCourse ? ' active' : '');
+  allSpan.textContent = 'All Courses';
+  allSpan.onclick = () => setCourseFilter(null, allSpan);
+  wrap.appendChild(allSpan);
+  courses.forEach(c => {
+    const sp = document.createElement('span');
+    sp.className = 'chip' + (currentCourse === c ? ' active' : '');
+    sp.textContent = c.split('-')[0].trim();
+    sp.onclick = () => setCourseFilter(c, sp);
+    wrap.appendChild(sp);
+  });
 }
 
 let activeCourseFilter = null;
