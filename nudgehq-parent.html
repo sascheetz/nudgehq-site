@@ -329,7 +329,7 @@
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
-    <button class="btn btn-secondary" onclick="window.loadFromCloud && window.loadFromCloud()">☁️ Load from Cloud</button>
+    <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
@@ -361,7 +361,7 @@
     </div>
   </div>
 
-  <div class="chips">
+  <div class="chips" id="filter-chips">
     <span class="chip active"     onclick="setFilter('all',this)">All</span>
     <span class="chip c-missing"  onclick="setFilter('missing',this)">⚠️ Missing</span>
     <span class="chip c-fire"     onclick="setFilter('fire',this)">🔴 Due Today</span>
@@ -369,6 +369,7 @@
     <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ Submitted</span>
     <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
   </div>
+  <div class="chips" id="course-chips" style="margin-top:-8px;"></div>
 
   <!-- Missing banner (hidden) -->
   <div id="missing-banner" style="display:none!important">
@@ -506,7 +507,7 @@ Query: filter[]=submittable</pre></div></div>
       <div class="field"><label>Apps Script Web App URL</label><input type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
       <p class="hint">Set up once — assignments are appended to your Google Sheet on every export. <button class="ilink" onclick="openModal('sheets-guide-modal')">Setup guide →</button></p>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
-    <button class="btn btn-secondary" onclick="window.loadFromCloud && window.loadFromCloud()">☁️ Load from Cloud</button>
+    <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
@@ -1006,7 +1007,29 @@ function checkTokenExpiry() {
   }
 }
 
-function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); }
+function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); renderCourseChips(); }
+
+function renderCourseChips() {
+  const wrap = document.getElementById('course-chips');
+  if (!wrap) return;
+  
+  // Get unique courses from current assignments
+  const courses = [...new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean))].sort();
+  
+  if (!courses.length) { wrap.innerHTML = ''; return; }
+  
+  const currentCourse = activeCourseFilter;
+  wrap.innerHTML = '<span class="chip' + (!currentCourse ? ' active' : '') + '" onclick="setCourseFilter(null,this)">All Courses</span>' +
+    courses.map(c => '<span class="chip' + (currentCourse === c ? ' active' : '') + '" onclick="setCourseFilter(' + JSON.stringify(c) + ',this)">' + esc(c.replace(/-(20\d\d)-.*/, '').trim()) + '</span>').join('');
+}
+
+let activeCourseFilter = null;
+window.setCourseFilter = function(course, el) {
+  activeCourseFilter = course;
+  document.querySelectorAll('#course-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+};
 
 // ── HAC Zeros ──
 function renderHACZeros() {
@@ -1113,6 +1136,8 @@ function renderCards() {
     const u       = urgency(a);
     const pDone   = parentDone[a.id];
     const sDone   = studentChecked[a.id]===true;
+    // Course filter
+    if (activeCourseFilter && a.course !== activeCourseFilter) return false;
     if (activeFilter==='all')          return !pDone;
     if (activeFilter==='done')         return pDone;
     if (activeFilter==='missing')      return a.status==='missing' && !pDone;
@@ -1374,7 +1399,7 @@ window.loadFromExtension = function(userId) {
     switcherSection.style.display = 'block';
     childBtns.innerHTML = '';
     userIds.forEach(uid => {
-      const name = localStorage.getItem('nhq_' + uid + '_name') || 'Student ' + uid;
+      const name = localStorage.getItem('nhq_' + uid + '_name') || (uid === '50904' ? 'Alex' : uid === '50906' ? 'Eleanor' : 'Student ' + uid);
       const btn  = document.createElement('button');
       btn.className = 'btn ' + (uid === activeUserId ? 'btn-primary' : 'btn-secondary');
       btn.textContent = name;
@@ -1526,22 +1551,22 @@ window.addEventListener('nhq_data_ready', () => {
 });
 
 // ── Load from Cloud ──
-window.loadFromCloud = async function() {
+window.loadFromCloud = async function(userId) {
+  userId = userId || '50904';
   try {
     showToast('Loading from cloud...', '');
-    // Use JSONP to bypass CORS restriction
     const json = await new Promise((resolve, reject) => {
       const cbName = 'nhq_cb_' + Date.now();
       window[cbName] = (data) => { delete window[cbName]; document.head.removeChild(s); resolve(data); };
       const s = document.createElement('script');
-      s.src = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec?userId=50904&callback=' + cbName;
+      s.src = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec?userId=' + userId + '&callback=' + cbName;
       s.onerror = () => { delete window[cbName]; reject(new Error('Script load failed')); };
       document.head.appendChild(s);
       setTimeout(() => { if(window[cbName]) { delete window[cbName]; reject(new Error('Timeout')); } }, 10000);
     });
     if (!json.ok) { showToast('No cloud data yet. Sync from Canvas first.', 'err'); return; }
     const d = json.data;
-    const prefix = 'nhq_50904_';
+    const prefix = 'nhq_' + userId + '_';
     localStorage.setItem(prefix + 'upcoming_raw',    d.upcoming_raw    || '[]');
     localStorage.setItem(prefix + 'missing_raw',     d.missing_raw     || '[]');
     localStorage.setItem(prefix + 'zeros_raw',       d.zeros_raw       || '[]');
@@ -1549,16 +1574,27 @@ window.loadFromCloud = async function() {
     localStorage.setItem(prefix + 'submitted_ids',   d.submitted_ids   || '[]');
     localStorage.setItem(prefix + 'marked_done_ids', d.marked_done_ids || '[]');
     localStorage.setItem(prefix + 'synced_at',       d.synced_at       || '');
-    localStorage.setItem(prefix + 'name',            d.name            || 'Alex');
-    localStorage.setItem('nhq_user_ids', JSON.stringify(['50904']));
-    window.loadFromExtension && window.loadFromExtension();
-    showToast('Loaded from cloud ✓', 'ok');
+    localStorage.setItem(prefix + 'name',            d.name            || 'Student');
+    
+    // Update user IDs list
+    const existingIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+    if (!existingIds.includes(userId)) existingIds.push(userId);
+    localStorage.setItem('nhq_user_ids', JSON.stringify(existingIds));
+    
+    window.loadFromExtension && window.loadFromExtension(userId);
+    showToast('Loaded ' + (d.name||'Student') + ' from cloud ✓', 'ok');
   } catch(e) {
     showToast('Cloud load failed: ' + e.message, 'err');
   }
 };
 
 // ── Load HAC Data ──
+window.loadAllFromCloud = async function() {
+  await window.loadFromCloud('50904');
+  try { await window.loadFromCloud('50906'); } catch(e) {}
+  showToast('Loaded all kids from cloud ✓', 'ok');
+};
+
 window.loadHACData = function() {
   const zeros    = JSON.parse(localStorage.getItem('nhq_hac_zeros') || '[]');
   const syncedAt = localStorage.getItem('nhq_hac_synced_at');
