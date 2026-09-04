@@ -333,7 +333,7 @@
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
-    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
+    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); switchTab('hac')">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
 
@@ -401,10 +401,13 @@
     <span id="sb-sub">These are marked done on his device — confirm when you've verified submission in Canvas.</span>
   </div>
 
+  <div id="panel-hac" style="display:none"></div>
+  <div id="panel-assignments">
   <div id="grid">
     <div id="loading"><span class="pulse">Connecting to Canvas…</span></div>
     <div id="empty"><div class="big">🎒</div><p>No assignments to show.<br>Load from Canvas API or try demo data.</p></div>
   </div>
+  </div><!-- end panel-assignments -->
   </div><!-- end panel-assignments -->
 </main>
 </div>
@@ -518,7 +521,7 @@ Query: filter[]=submittable</pre></div></div>
       <p class="hint">Set up once — assignments are appended to your Google Sheet on every export. <button class="ilink" onclick="openModal('sheets-guide-modal')">Setup guide →</button></p>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
-    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
+    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); switchTab('hac')">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
     </div>
@@ -1070,8 +1073,10 @@ function renderHACZeros() {
     section = document.createElement('div');
     section.id = 'hac-zeros-section';
     section.style.cssText = 'margin: 0 0 16px 0;';
-    const grid = document.getElementById('grid');
-    grid.parentNode.insertBefore(section, grid);
+    // Insert into HAC tab panel
+    const hacPanel = document.getElementById('panel-hac');
+    if (hacPanel) hacPanel.appendChild(section);
+    else { const grid = document.getElementById('grid'); grid.parentNode.insertBefore(section, grid); }
   }
   
   if (!zeros.length) {
