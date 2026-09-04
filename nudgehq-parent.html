@@ -360,8 +360,8 @@
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <h2 style="margin:0">Assignments</h2>
       <div style="display:flex;gap:0;border-bottom:2px solid var(--border);padding-bottom:0">
-        <button class="tab-btn active" id="tab-assignments" onclick="switchTab('assignments')">📋 Assignments</button>
-        <button class="tab-btn" id="tab-hac" onclick="switchTab('hac')">📊 HAC Grades</button>
+        <button class="tab-btn active" id="tab-assignments" data-tab="assignments">📋 Assignments</button>
+        <button class="tab-btn" id="tab-hac" data-tab="hac">📊 HAC Grades</button>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1022,7 +1022,7 @@ function checkTokenExpiry() {
 
 function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); renderCourseChips(); }
 
-function switchTab(tab) {
+window.switchTab = function switchTab(tab) {
   document.getElementById('panel-assignments').style.display = tab === 'assignments' ? '' : 'none';
   document.getElementById('panel-hac').style.display = tab === 'hac' ? '' : 'none';
   document.getElementById('tab-assignments').classList.toggle('active', tab === 'assignments');
@@ -1849,6 +1849,22 @@ window.showQR = function(type) {
 
   document.getElementById('qr-modal').classList.add('open');
 };
+</script>
+<script>
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-tab]');
+  if (!btn) return;
+  const tab = btn.getAttribute('data-tab');
+  const pa = document.getElementById('panel-assignments');
+  const ph = document.getElementById('panel-hac');
+  const ta = document.getElementById('tab-assignments');
+  const th = document.getElementById('tab-hac');
+  if (pa) pa.style.display = tab === 'assignments' ? '' : 'none';
+  if (ph) ph.style.display = tab === 'hac' ? '' : 'none';
+  if (ta) ta.classList.toggle('active', tab === 'assignments');
+  if (th) th.classList.toggle('active', tab === 'hac');
+  if (window.renderHACZeros && tab === 'hac') window.renderHACZeros();
+});
 </script>
 </body>
 </html>
