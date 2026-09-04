@@ -370,6 +370,8 @@
     </div>
   </div>
 
+  <div id="panel-hac" style="display:none;padding-top:8px;"></div>
+  <div id="panel-assignments">
   <div class="chips" id="filter-chips">
     <span class="chip active"     onclick="setFilter('all',this)">All</span>
     <span class="chip c-missing"  onclick="setFilter('missing',this)">⚠️ Missing</span>
@@ -401,13 +403,10 @@
     <span id="sb-sub">These are marked done on his device — confirm when you've verified submission in Canvas.</span>
   </div>
 
-  <div id="panel-hac" style="display:none"></div>
-  <div id="panel-assignments">
   <div id="grid">
     <div id="loading"><span class="pulse">Connecting to Canvas…</span></div>
     <div id="empty"><div class="big">🎒</div><p>No assignments to show.<br>Load from Canvas API or try demo data.</p></div>
   </div>
-  </div><!-- end panel-assignments -->
   </div><!-- end panel-assignments -->
 </main>
 </div>
@@ -1252,8 +1251,8 @@ function renderCards() {
         })()}
         
       </div>
-      <div class="c-actions">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px">
+      <div class="c-actions" style="flex-direction:column;gap:5px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
           <button class="nudge-btn${isMiss?' nb-missing':''}" id="nb-${a.id}"
             onclick="sendNudge('${a.id}',${isMiss})" ${pDone?'disabled':''}>
             📲 ${isMiss?'Text':'Nudge'}
