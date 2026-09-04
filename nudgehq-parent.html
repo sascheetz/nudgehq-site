@@ -1248,14 +1248,16 @@ function renderCards() {
         
       </div>
       <div class="c-actions">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px">
+          <button class="nudge-btn${isMiss?' nb-missing':''}" id="nb-${a.id}"
+            onclick="sendNudge('${a.id}',${isMiss})" ${pDone?'disabled':''}>
+            📲 ${isMiss?'Text':'Nudge'}
+          </button>
+          <button class="done-btn ${pDone?'db-checked':''}" onclick="toggleParentDone('${a.id}')">
+            ${pDone?'✓ Done':'Mark Done'}
+          </button>
+        </div>
         <textarea class="card-note" placeholder="Add a note..." data-id="${a.id}" rows="1">${esc(parentNotes[a.id]||'')}</textarea>
-        <button class="nudge-btn${isMiss?' nb-missing':''}" id="nb-${a.id}"
-          onclick="sendNudge('${a.id}',${isMiss})" ${pDone?'disabled':''}>
-          📲 ${isMiss?'Text about missing':'Send encouraging text'}
-        </button>
-        <button class="done-btn ${pDone?'db-checked':''}" onclick="toggleParentDone('${a.id}')">
-          ${pDone?'✓ Done':'Mark Done'}
-        </button>
       </div>`;
     // Auto-save notes
     card.querySelector('.card-note')?.addEventListener('input', (e) => {
