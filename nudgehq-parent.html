@@ -86,6 +86,8 @@
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
   .s-fire    { background: #fff8f0; border-color: #f6ad55; }
+  .s-zeroed  { background: #fff5f5; border-color: #fc8181; }
+  .s-zeroed  .stat-num { color: var(--fire); }
   .s-soon    { background: #fffde7; border-color: #ffd600; }
   .s-soon    .stat-num { color: #ffd600; }
   .s-student { background: #f8f9fa; border-color: #c8cdd4; }
@@ -95,7 +97,7 @@
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--soon); }
   .stat-box.s-missing .stat-num { color: var(--fire); }
-  .stat-box.s-student .stat-num { color: var(--chill); }
+  .stat-box.s-student .stat-num { color: #1a1d23; }
 
   .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.92rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
   .guide-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -132,6 +134,9 @@
   #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: transform 0.2s, box-shadow 0.2s; animation: up 0.3s ease both; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
+  .card-note { width:100%; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:0.78rem; font-family:inherit; color:var(--ink); background:var(--bg); resize:none; min-height:32px; line-height:1.4; }
+  .card-note:focus { outline:none; border-color:#5a67d8; }
+  .card-note::placeholder { color:var(--muted); }
   .card.u-fire  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
 .card.c-missing { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
 .card.c-zeroed  { box-shadow: -4px 0 0 #e53e3e, 0 1px 4px rgba(0,0,0,0.05); }
@@ -316,9 +321,10 @@
     <div class="stat-grid">
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
+      <div class="stat-box s-zeroed"> <div class="stat-num" id="s-zeros">—</div>  <div class="stat-lbl">Graded Zero</div></div>
       <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
       <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
-      <div class="stat-box s-student" style="grid-column:1/-1"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
+      <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
     </div>
   </div>
 
@@ -326,6 +332,7 @@
   <div class="s-section">
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
@@ -350,14 +357,20 @@
 <!-- ═══ MAIN ═══ -->
 <main>
   <div class="main-top">
-    <h2>Assignments</h2>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <h2 style="margin:0">Assignments</h2>
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);padding-bottom:0">
+        <button class="tab-btn active" id="tab-assignments" onclick="switchTab('assignments')">📋 Assignments</button>
+        <button class="tab-btn" id="tab-hac" onclick="switchTab('hac')">📊 HAC Grades</button>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span class="last-sync" id="last-sync">Not yet synced</span>
       <button onclick="_drawerUserInitiated=true;openDrawer(true)" style="background:none;border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-family:var(--mono);font-size:0.6rem;color:var(--subink);cursor:pointer;white-space:nowrap;" onmouseover="this.style.color='var(--ink)';this.style.borderColor='var(--border2)'" onmouseout="this.style.color='var(--subink)';this.style.borderColor='var(--border)'">⚙ Settings</button>
     </div>
   </div>
 
-  <div class="chips">
+  <div class="chips" id="filter-chips">
     <span class="chip active"     onclick="setFilter('all',this)">All</span>
     <span class="chip c-missing"  onclick="setFilter('missing',this)">⚠️ Missing</span>
     <span class="chip c-fire"     onclick="setFilter('fire',this)">🔴 Due Today</span>
@@ -365,6 +378,7 @@
     <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ Submitted</span>
     <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
   </div>
+  <div class="chips" id="course-chips" style="margin-top:-8px;"></div>
 
   <!-- Missing banner (hidden) -->
   <div id="missing-banner" style="display:none!important">
@@ -391,6 +405,7 @@
     <div id="loading"><span class="pulse">Connecting to Canvas…</span></div>
     <div id="empty"><div class="big">🎒</div><p>No assignments to show.<br>Load from Canvas API or try demo data.</p></div>
   </div>
+  </div><!-- end panel-assignments -->
 </main>
 </div>
 
@@ -502,6 +517,7 @@ Query: filter[]=submittable</pre></div></div>
       <div class="field"><label>Apps Script Web App URL</label><input type="url" id="sheets-url" placeholder="https://script.google.com/macros/s/…/exec"></div>
       <p class="hint">Set up once — assignments are appended to your Google Sheet on every export. <button class="ilink" onclick="openModal('sheets-guide-modal')">Setup guide →</button></p>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
+    <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
@@ -1001,7 +1017,47 @@ function checkTokenExpiry() {
   }
 }
 
-function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); }
+function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); renderCourseChips(); }
+
+function switchTab(tab) {
+  document.getElementById('panel-assignments').style.display = tab === 'assignments' ? '' : 'none';
+  document.getElementById('panel-hac').style.display = tab === 'hac' ? '' : 'none';
+  document.getElementById('tab-assignments').classList.toggle('active', tab === 'assignments');
+  document.getElementById('tab-hac').classList.toggle('active', tab === 'hac');
+}
+
+function renderCourseChips() {
+  const wrap = document.getElementById('course-chips');
+  if (!wrap) return;
+  
+  // Get unique courses from current assignments
+  const courses = [...new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean))].sort();
+  
+  if (!courses.length) { wrap.innerHTML = ''; return; }
+  
+  const currentCourse = activeCourseFilter;
+  wrap.innerHTML = '';
+  const allSpan = document.createElement('span');
+  allSpan.className = 'chip' + (!currentCourse ? ' active' : '');
+  allSpan.textContent = 'All Courses';
+  allSpan.onclick = () => setCourseFilter(null, allSpan);
+  wrap.appendChild(allSpan);
+  courses.forEach(c => {
+    const sp = document.createElement('span');
+    sp.className = 'chip' + (currentCourse === c ? ' active' : '');
+    sp.textContent = c.split('-')[0].trim();
+    sp.onclick = () => setCourseFilter(c, sp);
+    wrap.appendChild(sp);
+  });
+}
+
+let activeCourseFilter = null;
+window.setCourseFilter = function(course, el) {
+  activeCourseFilter = course;
+  document.querySelectorAll('#course-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+};
 
 // ── HAC Zeros ──
 function renderHACZeros() {
@@ -1108,6 +1164,8 @@ function renderCards() {
     const u       = urgency(a);
     const pDone   = parentDone[a.id];
     const sDone   = studentChecked[a.id]===true;
+    // Course filter
+    if (activeCourseFilter && a.course !== activeCourseFilter) return false;
     if (activeFilter==='all')          return !pDone;
     if (activeFilter==='done')         return pDone;
     if (activeFilter==='missing')      return a.status==='missing' && !pDone;
@@ -1189,6 +1247,7 @@ function renderCards() {
         
       </div>
       <div class="c-actions">
+        <textarea class="card-note" placeholder="Add a note..." data-id="${a.id}" rows="1">${esc(parentNotes[a.id]||'')}</textarea>
         <button class="nudge-btn${isMiss?' nb-missing':''}" id="nb-${a.id}"
           onclick="sendNudge('${a.id}',${isMiss})" ${pDone?'disabled':''}>
           📲 ${isMiss?'Text about missing':'Send encouraging text'}
@@ -1197,6 +1256,29 @@ function renderCards() {
           ${pDone?'✓ Done':'Mark Done'}
         </button>
       </div>`;
+    // Auto-save notes
+    card.querySelector('.card-note')?.addEventListener('input', (e) => {
+      const id = e.target.dataset.id;
+      parentNotes[id] = e.target.value;
+      localStorage.setItem('nhq_parent_notes', JSON.stringify(parentNotes));
+    });
+    // Auto-resize textarea
+    card.querySelector('.card-note')?.addEventListener('input', (e) => {
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    });
+    // Note auto-save
+    const noteEl = card.querySelector('.card-note');
+    if (noteEl) {
+      noteEl.addEventListener('input', (e) => {
+        const id = e.target.dataset.id;
+        parentNotes[id] = e.target.value;
+        localStorage.setItem('nhq_parent_notes', JSON.stringify(parentNotes));
+        e.target.style.height = 'auto';
+        e.target.style.height = e.target.scrollHeight + 'px';
+      });
+      if (noteEl.value) { noteEl.style.height = 'auto'; noteEl.style.height = noteEl.scrollHeight + 'px'; }
+    }
     grid.appendChild(card);
   }); // end list.forEach
 } // end renderCards
@@ -1226,6 +1308,7 @@ function updateStats() {
   const checked  = Object.values(studentChecked).filter(Boolean).length;
   const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = missing.length||'0';
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
+  const zerosEl  = document.getElementById('s-zeros');   if(zerosEl) zerosEl.textContent = zeroed.length||'0';
   const tomorrow  = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===1 && a.status==='upcoming' && !parentDone[a.id]; });
   const tomEl    = document.getElementById('s-tomorrow'); if(tomEl) tomEl.textContent = tomorrow.length||'0';
   const submittedCount = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_submitted_ids') || '[]').length;
@@ -1368,7 +1451,7 @@ window.loadFromExtension = function(userId) {
     switcherSection.style.display = 'block';
     childBtns.innerHTML = '';
     userIds.forEach(uid => {
-      const name = localStorage.getItem('nhq_' + uid + '_name') || 'Student ' + uid;
+      const name = localStorage.getItem('nhq_' + uid + '_name') || (uid === '50904' ? 'Alex' : uid === '50906' ? 'Eleanor' : 'Student ' + uid);
       const btn  = document.createElement('button');
       btn.className = 'btn ' + (uid === activeUserId ? 'btn-primary' : 'btn-secondary');
       btn.textContent = name;
@@ -1518,6 +1601,80 @@ window.addEventListener('nhq_data_ready', () => {
   console.log('[Nudge HQ] Bridge data received, loading...');
   setTimeout(() => window.loadFromExtension && window.loadFromExtension(), 100);
 });
+
+// ── Load from Cloud ──
+window.loadFromCloud = async function(userId) {
+  userId = userId || '50904';
+  try {
+    showToast('Loading from cloud...', '');
+    const json = await new Promise((resolve, reject) => {
+      const cbName = 'nhq_cb_' + Date.now();
+      window[cbName] = (data) => { delete window[cbName]; document.head.removeChild(s); resolve(data); };
+      const s = document.createElement('script');
+      s.src = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec?userId=' + userId + '&callback=' + cbName;
+      s.onerror = () => { delete window[cbName]; reject(new Error('Script load failed')); };
+      document.head.appendChild(s);
+      setTimeout(() => { if(window[cbName]) { delete window[cbName]; reject(new Error('Timeout')); } }, 10000);
+    });
+    if (!json.ok) { showToast('No cloud data yet. Sync from Canvas first.', 'err'); return; }
+    const d = json.data;
+    const prefix = 'nhq_' + userId + '_';
+    localStorage.setItem(prefix + 'upcoming_raw',    d.upcoming_raw    || '[]');
+    localStorage.setItem(prefix + 'missing_raw',     d.missing_raw     || '[]');
+    localStorage.setItem(prefix + 'zeros_raw',       d.zeros_raw       || '[]');
+    localStorage.setItem(prefix + 'course_map',      d.course_map      || '{}');
+    localStorage.setItem(prefix + 'submitted_ids',   d.submitted_ids   || '[]');
+    localStorage.setItem(prefix + 'marked_done_ids', d.marked_done_ids || '[]');
+    localStorage.setItem(prefix + 'synced_at',       d.synced_at       || '');
+    localStorage.setItem(prefix + 'name',            d.name            || 'Student');
+    
+    // Update user IDs list
+    const existingIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+    if (!existingIds.includes(userId)) existingIds.push(userId);
+    localStorage.setItem('nhq_user_ids', JSON.stringify(existingIds));
+    
+    window.loadFromExtension && window.loadFromExtension(userId);
+    showToast('Loaded ' + (d.name||'Student') + ' from cloud ✓', 'ok');
+  } catch(e) {
+    showToast('Cloud load failed: ' + e.message, 'err');
+  }
+};
+
+// ── Load HAC Data ──
+window.loadAllFromCloud = async function() {
+  await window.loadFromCloud('50904');
+  try { await window.loadFromCloud('50906'); } catch(e) {}
+  // Also load HAC data
+  try {
+    const hacJson = await new Promise((resolve, reject) => {
+      const cbName = 'nhq_cb_' + Date.now();
+      window[cbName] = (data) => { delete window[cbName]; document.head.removeChild(s); resolve(data); };
+      const s = document.createElement('script');
+      s.src = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec?userId=hac_50904&callback=' + cbName;
+      s.onerror = () => { delete window[cbName]; reject(new Error('HAC cloud load failed')); };
+      document.head.appendChild(s);
+      setTimeout(() => { if(window[cbName]) { delete window[cbName]; reject(new Error('Timeout')); } }, 10000);
+    });
+    if (hacJson.ok && hacJson.data?.hac_zeros) {
+      localStorage.setItem('nhq_hac_zeros', hacJson.data.hac_zeros);
+      localStorage.setItem('nhq_hac_synced_at', hacJson.data.synced_at || '');
+      renderHACZeros();
+    }
+  } catch(e) { console.warn('HAC cloud load failed:', e.message); }
+  showToast('Loaded all data from cloud ✓', 'ok');
+};
+
+window.loadHACData = function() {
+  const zeros    = JSON.parse(localStorage.getItem('nhq_hac_zeros') || '[]');
+  const syncedAt = localStorage.getItem('nhq_hac_synced_at');
+  if (!zeros.length) {
+    showToast('No HAC data yet. Open HAC Classwork and let Nudge HQ sync.', 'err');
+    return;
+  }
+  renderHACZeros();
+  showToast('Loaded ' + zeros.length + ' HAC entries ✓', 'ok');
+};
+
 </script>
 <script>
 
