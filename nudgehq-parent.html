@@ -1019,6 +1019,7 @@ function checkTokenExpiry() {
 
 function renderAll() { renderBanners(); renderCards(); renderHACZeros(); updateStats(); checkTokenExpiry(); renderCourseChips(); }
 
+<<<<<<< HEAD
 function switchTab(tab) {
   document.getElementById('panel-assignments').style.display = tab === 'assignments' ? '' : 'none';
   document.getElementById('panel-hac').style.display = tab === 'hac' ? '' : 'none';
@@ -1026,6 +1027,8 @@ function switchTab(tab) {
   document.getElementById('tab-hac').classList.toggle('active', tab === 'hac');
 }
 
+=======
+>>>>>>> cc1a2c121b6e6336be3ae72a62d9169ca697f934
 function renderCourseChips() {
   const wrap = document.getElementById('course-chips');
   if (!wrap) return;
@@ -1644,6 +1647,7 @@ window.loadFromCloud = async function(userId) {
 window.loadAllFromCloud = async function() {
   await window.loadFromCloud('50904');
   try { await window.loadFromCloud('50906'); } catch(e) {}
+<<<<<<< HEAD
   // Also load HAC data
   try {
     const hacJson = await new Promise((resolve, reject) => {
@@ -1662,6 +1666,9 @@ window.loadAllFromCloud = async function() {
     }
   } catch(e) { console.warn('HAC cloud load failed:', e.message); }
   showToast('Loaded all data from cloud ✓', 'ok');
+=======
+  showToast('Loaded all kids from cloud ✓', 'ok');
+>>>>>>> cc1a2c121b6e6336be3ae72a62d9169ca697f934
 };
 
 window.loadHACData = function() {

@@ -53,14 +53,17 @@ aside {
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat-box  { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; }
 .s-missing { background: #fff5f5; border-color: #fc8181; }
-.s-fire    { background: #fff8f0; border-color: #f6ad55; }
-.s-check   { background: #f0fff4; border-color: #68d391; }
+.s-fire    { background: #fff5f5; border-color: #fc8181; }
+.s-zeroed  { background: #fff5f5; border-color: #fc8181; }
+.s-soon    { background: #fffde7; border-color: #ffd600; }
+.s-chill   { background: #f0fff4; border-color: #68d391; }
+.s-check   { background: #f8f9fa; border-color: #c8cdd4; }
 .stat-num  { font-size: 1.5rem; font-weight: 700; color: var(--ink); }
 .stat-lbl  { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
 .s-missing .stat-num { color: var(--fire); }
-.s-fire    .stat-num { color: var(--soon); }
+.s-fire    .stat-num { color: var(--fire); }
 .s-check   .stat-num { color: var(--chill); }
-.s-fire    .stat-num { color: var(--soon); }
+.s-fire    .stat-num { color: var(--fire); }
 .s-check   .stat-num { color: var(--chill); }
 
 /* Progress bar */
@@ -207,8 +210,10 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     <div class="stat-grid">
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-today">—</div>  <div class="stat-lbl">Due Today</div></div>
+      <div class="stat-box s-zeroed"> <div class="stat-num" id="s-zeros">—</div>  <div class="stat-lbl">Graded Zero</div></div>
+      <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
+      <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
       <div class="stat-box s-check">  <div class="stat-num" id="s-done">—</div>   <div class="stat-lbl">Submitted</div></div>
-      <div class="stat-box">          <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
     </div>
   </div>
 </aside>
@@ -317,7 +322,7 @@ function pillLabel(a, u) {
   if (localChecked[a.id]) return '✓ Done';
   const now = new Date(); now.setHours(0,0,0,0);
   const dy  = a.due ? Math.round((new Date(a.due.getFullYear(), a.due.getMonth(), a.due.getDate()) - now) / 86400000) : 999;
-  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: days===0?'🔴 Due Today':'🔴 Due Tomorrow', soon:'🟠 Due Tomorrow', ok:'🟡 This Week', chill:'🟢 Upcoming' }[u] || '';
+  return { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: dy===0?'🔴 Due Today':dy===1?'🔴 Due Tomorrow':'🟠 Due Soon', soon:'🟠 Due Tomorrow', ok:'🟡 This Week', chill:'🟢 Upcoming' }[u] || '';
 }
 
 // ── Load from extension ──
