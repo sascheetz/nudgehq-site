@@ -1611,6 +1611,9 @@ window.addEventListener('nhq_data_ready', () => {
   setTimeout(() => window.loadFromExtension && window.loadFromExtension(), 100);
 });
 
+// Initialize default tab
+switchTab('assignments');
+
 // ── Load from Cloud ──
 window.loadFromCloud = async function(userId) {
   userId = userId || '50904';
