@@ -1262,6 +1262,7 @@ function renderCards() {
       const id = e.target.dataset.id;
       parentNotes[id] = e.target.value;
       localStorage.setItem('nhq_parent_notes', JSON.stringify(parentNotes));
+      scheduleCloudPush();
     });
     // Auto-resize textarea
     card.querySelector('.card-note')?.addEventListener('input', (e) => {
@@ -1275,6 +1276,7 @@ function renderCards() {
         const id = e.target.dataset.id;
         parentNotes[id] = e.target.value;
         localStorage.setItem('nhq_parent_notes', JSON.stringify(parentNotes));
+      scheduleCloudPush();
         e.target.style.height = 'auto';
         e.target.style.height = e.target.scrollHeight + 'px';
       });
@@ -1620,6 +1622,9 @@ window.loadFromCloud = async function(userId) {
     if (!json.ok) { showToast('No cloud data yet. Sync from Canvas first.', 'err'); return; }
     const d = json.data;
     const prefix = 'nhq_' + userId + '_';
+    // Restore parent notes and done from cloud
+    if (d.parent_done)  { parentDone  = JSON.parse(d.parent_done);  localStorage.setItem('nhq_parent_done',  d.parent_done);  }
+    if (d.parent_notes) { parentNotes = JSON.parse(d.parent_notes); localStorage.setItem('nhq_parent_notes', d.parent_notes); }
     localStorage.setItem(prefix + 'upcoming_raw',    d.upcoming_raw    || '[]');
     localStorage.setItem(prefix + 'missing_raw',     d.missing_raw     || '[]');
     localStorage.setItem(prefix + 'zeros_raw',       d.zeros_raw       || '[]');
@@ -1642,6 +1647,46 @@ window.loadFromCloud = async function(userId) {
 };
 
 // ── Load HAC Data ──
+// ── Push dashboard changes to cloud ──
+let _cloudPushTimer = null;
+function scheduleCloudPush() {
+  clearTimeout(_cloudPushTimer);
+  _cloudPushTimer = setTimeout(pushToCloud, 3000); // debounce 3 seconds
+}
+
+async function pushToCloud() {
+  const userId = activeUserId || '50904';
+  const prefix = 'nhq_' + userId + '_';
+  try {
+    await new Promise((resolve, reject) => {
+      const cbName = 'nhq_push_' + Date.now();
+      const s = document.createElement('script');
+      // Use POST via fetch instead
+      resolve();
+    });
+    await fetch('https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        userId,
+        upcoming_raw:    localStorage.getItem(prefix + 'upcoming_raw')    || '[]',
+        missing_raw:     localStorage.getItem(prefix + 'missing_raw')     || '[]',
+        zeros_raw:       localStorage.getItem(prefix + 'zeros_raw')       || '[]',
+        course_map:      localStorage.getItem(prefix + 'course_map')      || '{}',
+        submitted_ids:   localStorage.getItem(prefix + 'submitted_ids')   || '[]',
+        marked_done_ids: localStorage.getItem(prefix + 'marked_done_ids') || '[]',
+        synced_at:       localStorage.getItem(prefix + 'synced_at')       || '',
+        name:            localStorage.getItem(prefix + 'name')            || '',
+        parent_done:     JSON.stringify(parentDone),
+        parent_notes:    JSON.stringify(parentNotes),
+      })
+    });
+    console.log('[NHQ] Cloud push complete');
+  } catch(e) {
+    console.warn('[NHQ] Cloud push failed:', e.message);
+  }
+}
+
 window.loadAllFromCloud = async function() {
   await window.loadFromCloud('50904');
   try { await window.loadFromCloud('50906'); } catch(e) {}
