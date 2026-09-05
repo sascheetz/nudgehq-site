@@ -1879,26 +1879,26 @@ function renderCompleted() {
   
   wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
     '<thead><tr style="border-bottom:2px solid var(--border)">' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Course</th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Assignment</th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Due</th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Submitted</th>' +
-    '<th style="text-align:right;padding:6px 8px;color:var(--subink)">Score</th>' +
-    '</tr></thead><tbody>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Course<\/th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Assignment<\/th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Due<\/th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Submitted<\/th>' +
+    '<th style="text-align:right;padding:6px 8px;color:var(--subink)">Score<\/th>' +
+    '<\/tr><\/thead><tbody>' +
     subs.map(s => {
       const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
       const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
       const score = s.score !== null && s.score !== undefined ? s.score + ' / ' + (s.points||'?') : '—';
       const late = s.due && new Date(s.submitted_at) > new Date(s.due);
       return '<tr style="border-bottom:1px solid var(--border)">' +
-        '<td style="padding:6px 8px;color:var(--subink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.course) + '</td>' +
-        '<td style="padding:6px 8px;font-weight:500">' + esc(s.title) + '</td>' +
-        '<td style="padding:6px 8px;color:var(--muted)">' + due + '</td>' +
-        '<td style="padding:6px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' ⚠️':'') + '</td>' +
-        '<td style="padding:6px 8px;text-align:right">' + score + '</td>' +
-        '</tr>';
+        '<td style="padding:6px 8px;color:var(--subink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.course) + '<\/td>' +
+        '<td style="padding:6px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
+        '<td style="padding:6px 8px;color:var(--muted)">' + due + '<\/td>' +
+        '<td style="padding:6px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' ⚠️':'') + '<\/td>' +
+        '<td style="padding:6px 8px;text-align:right">' + score + '<\/td>' +
+        '<\/tr>';
     }).join('') +
-    '</tbody></table>';
+    '<\/tbody><\/table>';
 }
 </script>
 </body>
