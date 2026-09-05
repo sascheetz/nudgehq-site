@@ -333,7 +333,7 @@
     <div class="s-label">Quick Actions</div>
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
-    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); switchTab('hac')">📊 Load HAC Data</button>
+    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); document.querySelector('[data-tab=\'hac\']')?.click()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
 
@@ -362,6 +362,7 @@
       <div style="display:flex;gap:0;border-bottom:2px solid var(--border);padding-bottom:0">
         <button class="tab-btn active" id="tab-assignments" data-tab="assignments">📋 Assignments</button>
         <button class="tab-btn" id="tab-hac" data-tab="hac">📊 HAC Grades</button>
+        <button class="tab-btn" id="tab-completed" data-tab="completed">✅ Completed</button>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -371,6 +372,7 @@
   </div>
 
   <div id="panel-hac" style="display:none;padding-top:8px;"></div>
+  <div id="panel-completed" style="display:none;padding-top:8px;"><div id="completed-table"></div></div>
   <div id="panel-assignments">
   <div class="chips" id="filter-chips">
     <span class="chip active"     onclick="setFilter('all',this)">All</span>
@@ -520,7 +522,7 @@ Query: filter[]=submittable</pre></div></div>
       <p class="hint">Set up once — assignments are appended to your Google Sheet on every export. <button class="ilink" onclick="openModal('sheets-guide-modal')">Setup guide →</button></p>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
-    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); switchTab('hac')">📊 Load HAC Data</button>
+    <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); document.querySelector('[data-tab=\'hac\']')?.click()">📊 Load HAC Data</button>
     <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
     </div>
@@ -1099,6 +1101,7 @@ function renderHACZeros() {
             <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Due</th>
             <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">Score</th>
             <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">%</th>
+            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Canvas</th>
             <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Canvas</th>
           </tr>
         </thead>
@@ -1855,16 +1858,46 @@ document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-tab]');
   if (!btn) return;
   const tab = btn.getAttribute('data-tab');
-  const pa = document.getElementById('panel-assignments');
-  const ph = document.getElementById('panel-hac');
-  const ta = document.getElementById('tab-assignments');
-  const th = document.getElementById('tab-hac');
-  if (pa) pa.style.display = tab === 'assignments' ? '' : 'none';
-  if (ph) ph.style.display = tab === 'hac' ? '' : 'none';
-  if (ta) ta.classList.toggle('active', tab === 'assignments');
-  if (th) th.classList.toggle('active', tab === 'hac');
+  ['assignments','hac','completed'].forEach(t => {
+    const panel = document.getElementById('panel-' + t);
+    const tabBtn = document.getElementById('tab-' + t);
+    if (panel) panel.style.display = tab === t ? '' : 'none';
+    if (tabBtn) tabBtn.classList.toggle('active', tab === t);
+  });
   if (window.renderHACZeros && tab === 'hac') window.renderHACZeros();
+  if (tab === 'completed') renderCompleted();
 });
+
+function renderCompleted() {
+  const wrap = document.getElementById('completed-table');
+  if (!wrap) return;
+  const userId = localStorage.getItem('nhq_user_ids') ? JSON.parse(localStorage.getItem('nhq_user_ids'))[0] : '50904';
+  const subs = JSON.parse(localStorage.getItem('nhq_' + userId + '_completed_subs') || '[]');
+  if (!subs.length) { wrap.innerHTML = '<p style="color:var(--muted);padding:20px">No completed assignments yet. Sync from Canvas first.</p>'; return; }
+  
+  wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+    '<thead><tr style="border-bottom:2px solid var(--border)">' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Course</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Assignment</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Due</th>' +
+    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Submitted</th>' +
+    '<th style="text-align:right;padding:6px 8px;color:var(--subink)">Score</th>' +
+    '</tr></thead><tbody>' +
+    subs.map(s => {
+      const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+      const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      const score = s.score !== null && s.score !== undefined ? s.score + ' / ' + (s.points||'?') : '—';
+      const late = s.due && new Date(s.submitted_at) > new Date(s.due);
+      return '<tr style="border-bottom:1px solid var(--border)">' +
+        '<td style="padding:6px 8px;color:var(--subink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.course) + '</td>' +
+        '<td style="padding:6px 8px;font-weight:500">' + esc(s.title) + '</td>' +
+        '<td style="padding:6px 8px;color:var(--muted)">' + due + '</td>' +
+        '<td style="padding:6px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' ⚠️':'') + '</td>' +
+        '<td style="padding:6px 8px;text-align:right">' + score + '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>';
+}
 </script>
 </body>
 </html>
