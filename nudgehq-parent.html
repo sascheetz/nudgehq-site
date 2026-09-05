@@ -1854,6 +1854,8 @@ window.showQR = function(type) {
 };
 </script>
 <script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('[data-tab]');
   if (!btn) return;
