@@ -319,9 +319,9 @@
   <div class="s-section">
     <div class="s-label">At a Glance</div>
     <div class="stat-grid">
+      <div class="stat-box s-zeroed"> <div class="stat-num" id="s-zeros">—</div>  <div class="stat-lbl">Graded Zero</div></div>
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
-      <div class="stat-box s-zeroed"> <div class="stat-num" id="s-zeros">—</div>  <div class="stat-lbl">Graded Zero</div></div>
       <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
       <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
       <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
@@ -334,7 +334,6 @@
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); document.querySelector('[data-tab=\'hac\']')?.click()">📊 Load HAC Data</button>
-    <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
 
     <button class="btn btn-secondary" onclick="window.sendGeneralReminder && window.sendGeneralReminder()">📲 Send General Reminder</button>
@@ -523,7 +522,6 @@ Query: filter[]=submittable</pre></div></div>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); document.querySelector('[data-tab=\'hac\']')?.click()">📊 Load HAC Data</button>
-    <button class="btn btn-secondary" onclick="window.open('https://hac.lakotainline.com/HomeAccess/Classes/Classwork', '_blank')">🏫 Open HAC Classwork</button>
     <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
     </div>
 
@@ -1035,8 +1033,12 @@ function renderCourseChips() {
   const wrap = document.getElementById('course-chips');
   if (!wrap) return;
   
-  // Get unique courses from current assignments
-  const courses = [...new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean))].sort();
+  // Get ALL courses from course_map, not just ones with assignments
+  const courseMapData = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_course_map') || '{}');
+  const allCourseNames = Object.values(courseMapData).filter(Boolean).sort();
+  const assignmentCourses = new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean));
+  // Show all courses from map, mark ones with no assignments as dim
+  const courses = allCourseNames.length ? allCourseNames : [...assignmentCourses].sort();
   
   if (!courses.length) { wrap.innerHTML = ''; return; }
   
@@ -1102,7 +1104,7 @@ function renderHACZeros() {
             <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">Score</th>
             <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">%</th>
             <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Canvas</th>
-            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Canvas</th>
+            <th style="tex
           </tr>
         </thead>
         <tbody>
