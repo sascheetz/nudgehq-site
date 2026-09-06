@@ -373,16 +373,16 @@
   <div id="panel-hac" style="display:none;padding-top:8px;"></div>
   <div id="panel-completed" style="display:none;padding-top:8px;"><div id="completed-table"></div></div>
   <div id="panel-assignments">
-  <div class="chips" id="filter-chips">
-    <span class="chip active"     onclick="setFilter('all',this)">All</span>
-    <span class="chip c-missing"  onclick="setFilter('missing',this)">⚠️ Missing</span>
-    <span class="chip c-fire"     onclick="setFilter('fire',this)">🔴 Due Today</span>
-    <span class="chip"            onclick="setFilter('soon',this)">🟠 This Week</span>
-    <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ Submitted</span>
-    <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
-  </div>
-  <div style="margin-bottom:12px;">
-    <select id="course-filter-select" onchange="setCourseFilter(this.value||null, null)" style="padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-size:0.87rem;font-family:inherit;color:var(--subink);background:var(--bg);cursor:pointer;outline:none;">
+  <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+    <select id="status-filter-select" onchange="setFilter(this.value,null)" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:0.87rem;font-family:inherit;color:var(--subink);background:var(--bg);cursor:pointer;outline:none;">
+      <option value="all">All Assignments</option>
+      <option value="missing">⚠️ Missing</option>
+      <option value="fire">🔴 Due Today</option>
+      <option value="soon">🟠 This Week</option>
+      <option value="student-done">✅ Submitted</option>
+      <option value="done">✓ Parent Done</option>
+    </select>
+    <select id="course-filter-select" onchange="setCourseFilter(this.value||null, null)" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:0.87rem;font-family:inherit;color:var(--subink);background:var(--bg);cursor:pointer;outline:none;">
       <option value="">All Courses</option>
     </select>
   </div>
@@ -1287,8 +1287,8 @@ function renderCards() {
 
 window.setFilter = function(f,el) {
   activeFilter = f;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
+  const sel = document.getElementById('status-filter-select');
+  if (sel && !el) sel.value = f;
   renderCards();
 };
 
