@@ -1542,6 +1542,8 @@ window.loadFromExtension = function(userId) {
     const id = String(a.id || e.id);
     const _bareId1 = id.replace(/^assignment_/, '');
     if (seen.has(id) || submittedIds.has(id) || submittedIds.has(_bareId1) || markedDoneIds.has(id) || markedDoneIds.has(_bareId1)) return;
+    // Also skip if assignment has a score (pending_review case)
+    if (a.submission && a.submission.score !== null && a.submission.score !== undefined) return;
     const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
     if (!due || due < academicYearStart) return;
     const title = a.name || a.title || e.title || '';
@@ -1872,36 +1874,100 @@ document.addEventListener('click', function(e) {
   if (tab === 'completed') renderCompleted();
 });
 
+// Completed tab state
+let _cSort = 'submitted_desc';
+let _cCourse = null;
+let _cStatus = null;
+let _cRange = 'all';
+
 function renderCompleted() {
   const wrap = document.getElementById('completed-table');
   if (!wrap) return;
   const userId = localStorage.getItem('nhq_user_ids') ? JSON.parse(localStorage.getItem('nhq_user_ids'))[0] : '50904';
-  const subs = JSON.parse(localStorage.getItem('nhq_' + userId + '_completed_subs') || '[]');
-  if (!subs.length) { wrap.innerHTML = '<p style="color:var(--muted);padding:20px">No completed assignments yet. Sync from Canvas first.</p>'; return; }
-  
-  wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
-    '<thead><tr style="border-bottom:2px solid var(--border)">' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Course<\/th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Assignment<\/th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Due<\/th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Submitted<\/th>' +
-    '<th style="text-align:right;padding:6px 8px;color:var(--subink)">Score<\/th>' +
-    '<\/tr><\/thead><tbody>' +
-    subs.map(s => {
-      const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
-      const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-      const score = s.score !== null && s.score !== undefined ? s.score + ' / ' + (s.points||'?') : '—';
-      const late = s.due && new Date(s.submitted_at) > new Date(s.due);
-      return '<tr style="border-bottom:1px solid var(--border)">' +
-        '<td style="padding:6px 8px;color:var(--subink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.course) + '<\/td>' +
-        '<td style="padding:6px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
-        '<td style="padding:6px 8px;color:var(--muted)">' + due + '<\/td>' +
-        '<td style="padding:6px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' ⚠️':'') + '<\/td>' +
-        '<td style="padding:6px 8px;text-align:right">' + score + '<\/td>' +
-        '<\/tr>';
-    }).join('') +
-    '<\/tbody><\/table>';
-}
-</script>
+  let allSubs = JSON.parse(localStorage.getItem('nhq_' + userId + '_completed_subs') || '[]');
+  if (!allSubs.length) { wrap.innerHTML = '<p style="color:var(--muted);padding:20px">No completed assignments yet. Sync from Canvas first.<\/p>'; return; }
+
+  const now = new Date();
+  let subs = [...allSubs];
+  if (_cCourse) subs = subs.filter(s => s.course === _cCourse);
+  if (_cStatus === 'late') subs = subs.filter(s => s.due && new Date(s.submitted_at) > new Date(s.due));
+  if (_cStatus === 'ontime') subs = subs.filter(s => !s.due || new Date(s.submitted_at) <= new Date(s.due));
+  if (_cStatus === 'graded') subs = subs.filter(s => s.score !== null && s.score !== undefined);
+  if (_cRange === 'week') subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 7*86400000));
+  if (_cRange === 'month') subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 30*86400000));
+
+  subs.sort((a, b) => {
+    if (_cSort === 'submitted_desc') return new Date(b.submitted_at) - new Date(a.submitted_at);
+    if (_cSort === 'submitted_asc')  return new Date(a.submitted_at) - new Date(b.submitted_at);
+    if (_cSort === 'due_desc')       return new Date(b.due||0) - new Date(a.due||0);
+    if (_cSort === 'due_asc')        return new Date(a.due||0) - new Date(b.due||0);
+    return (a.course||'').localeCompare(b.course||'');
+  });
+
+  const allCourses = [...new Set(allSubs.map(s => s.course).filter(Boolean))].sort();
+  const byCourse = {};
+  const courseOrder = [];
+  subs.forEach(s => {
+    const c = s.course || 'Unknown';
+    if (!byCourse[c]) { byCourse[c] = []; courseOrder.push(c); }
+    byCourse[c].push(s);
+  });
+
+  const chipStyle = (active) => 'cursor:pointer;padding:4px 10px;border-radius:20px;font-size:0.73rem;border:1px solid ' + (active?'#5a67d8':'var(--border)') + ';background:' + (active?'#eef0fb':'') + ';color:' + (active?'#5a67d8':'var(--subink)');
+
+  wrap.innerHTML =
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">' +
+      '<select onchange="_cSort=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+        '<option value="submitted_desc"' + (_cSort==='submitted_desc'?' selected':'') + '>Submitted \u2193<\/option>' +
+        '<option value="submitted_asc"'  + (_cSort==='submitted_asc' ?' selected':'') + '>Submitted \u2191<\/option>' +
+        '<option value="due_desc"'       + (_cSort==='due_desc'      ?' selected':'') + '>Due date \u2193<\/option>' +
+        '<option value="due_asc"'        + (_cSort==='due_asc'       ?' selected':'') + '>Due date \u2191<\/option>' +
+      '<\/select>' +
+      '<select onchange="_cRange=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+        '<option value="all"'   + (_cRange==='all'  ?' selected':'') + '>All time<\/option>' +
+        '<option value="week"'  + (_cRange==='week' ?' selected':'') + '>Last 7 days<\/option>' +
+        '<option value="month"' + (_cRange==='month'?' selected':'') + '>Last 30 days<\/option>' +
+      '<\/select>' +
+      '<select onchange="_cStatus=this.value||null;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+        '<option value="">All status<\/option>' +
+        '<option value="ontime"' + (_cStatus==='ontime'?' selected':'') + '>On time<\/option>' +
+        '<option value="late"'   + (_cStatus==='late'  ?' selected':'') + '>Late<\/option>' +
+        '<option value="graded"' + (_cStatus==='graded'?' selected':'') + '>Graded<\/option>' +
+      '<\/select>' +
+      '<span style="font-size:0.75rem;color:var(--muted)">' + subs.length + ' assignments<\/span>' +
+    '<\/div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">' +
+      '<span style="' + chipStyle(!_cCourse) + '" onclick="_cCourse=null;renderCompleted()">All Courses<\/span>' +
+      allCourses.map((c,i) => '<span style="' + chipStyle(_cCourse===c) + '" onclick="window._cCourse=window._nhqC[' + i + '];renderCompleted()">' + esc(c.split('-')[0].trim()) + '<\/span>').join('') +
+    '<\/div>' +
+    courseOrder.map(course => {
+      const items = byCourse[course];
+      return '<div style="margin-bottom:20px">' +
+        '<div style="font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--subink);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:4px">' +
+          esc(course.split('-')[0].trim()) + ' <span style="font-weight:400;color:var(--muted)">(' + items.length + ')<\/span>' +
+        '<\/div>' +
+        '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+        '<thead><tr>' +
+          '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Assignment<\/th>' +
+          '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Due<\/th>' +
+          '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Submitted<\/th>' +
+          '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Score<\/th>' +
+        '<\/tr><\/thead><tbody>' +
+        items.map(s => {
+          const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '\u2014';
+          const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+          const score = s.score !== null && s.score !== undefined ? s.score + ' / ' + (s.points||'?') : '\u2014';
+          const late = s.due && new Date(s.submitted_at) > new Date(s.due);
+          return '<tr style="border-bottom:1px solid var(--border)">' +
+            '<td style="padding:5px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
+            '<td style="padding:5px 8px;color:var(--muted)">' + due + '<\/td>' +
+            '<td style="padding:5px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' \u26a0\ufe0f':'') + '<\/td>' +
+            '<td style="padding:5px 8px;text-align:right">' + score + '<\/td>' +
+          '<\/tr>';
+        }).join('') +
+        '<\/tbody><\/table><\/div>';
+    }).join('');
+  window._nhqC = allCourses;
+}</script>
 </body>
 </html>
