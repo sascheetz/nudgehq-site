@@ -1540,7 +1540,8 @@ window.loadFromExtension = function(userId) {
   upcomingRaw.filter(e => e.type === 'Assignment' || e.assignment).forEach(e => {
     const a = e.assignment || e;
     const id = String(a.id || e.id);
-    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
+    const _bareId1 = id.replace(/^assignment_/, '');
+    if (seen.has(id) || submittedIds.has(id) || submittedIds.has(_bareId1) || markedDoneIds.has(id) || markedDoneIds.has(_bareId1)) return;
     const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
     if (!due || due < academicYearStart) return;
     const title = a.name || a.title || e.title || '';
