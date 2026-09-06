@@ -1943,18 +1943,12 @@ function renderCompleted() {
         '<option value="graded"' + (_cStatus==='graded'?' selected':'') + '>Graded<\/option>' +
       '<\/select>' +
       '<span style="font-size:0.75rem;color:var(--muted)">' + subs.length + ' assignments<\/span>' +
-      // Pagination controls
-      (subs.length > _cPageSize ? 
-        '<div style="display:flex;gap:6px;align-items:center;margin-left:auto">' +
-          '<button onclick="_cPage=Math.max(0,_cPage-1);renderCompleted()" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;background:var(--bg);cursor:pointer;" ' + (_cPage===0?'disabled':'') + '>←<\/button>' +
-          '<span style="font-size:0.78rem;color:var(--subink)">Page ' + (_cPage+1) + ' of ' + Math.ceil(subs.length/_cPageSize) + '<\/span>' +
-          '<button onclick="_cPage=Math.min(Math.ceil(subs.length/_cPageSize)-1,_cPage+1);renderCompleted()" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;background:var(--bg);cursor:pointer;" ' + (_cPage>=Math.ceil(subs.length/_cPageSize)-1?'disabled':'') + '>→<\/button>' +
-        '<\/div>' : '') +
+
     '<\/div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">' +
-      '<span style="' + chipStyle(!_cCourse) + '" onclick="_cCourse=null;renderCompleted()">All Courses<\/span>' +
-      allCourses.map((c,i) => '<span style="' + chipStyle(_cCourse===c) + '" onclick="window._cCourse=window._nhqC[' + i + '];renderCompleted()">' + esc(c.split('-')[0].trim()) + '<\/span>').join('') +
-    '<\/div>' +
+    '<select onchange="_cCourse=this.value||null;_cPage=0;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit;margin-bottom:12px;display:block">' +
+      '<option value="">All Courses<\/option>' +
+      allCourses.map(c => '<option value="' + c.replace(/"/g,'&quot;') + '"' + (_cCourse===c?' selected':'') + '>' + esc(c.split('-')[0].trim()) + '<\/option>').join('') +
+    '<\/select>' +
     courseOrder.map(course => {
       const items = byCourse[course]; if (!items) return '';
       return '<div style="margin-bottom:20px">' +
