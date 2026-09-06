@@ -381,7 +381,11 @@
     <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ Submitted</span>
     <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
   </div>
-  <div class="chips" id="course-chips" style="margin-top:-8px;"></div>
+  <div style="margin-bottom:12px;">
+    <select id="course-filter-select" onchange="setCourseFilter(this.value||null, null)" style="padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-size:0.87rem;font-family:inherit;color:var(--subink);background:var(--bg);cursor:pointer;outline:none;">
+      <option value="">All Courses</option>
+    </select>
+  </div>
 
   <!-- Missing banner (hidden) -->
   <div id="missing-banner" style="display:none!important">
@@ -1030,39 +1034,24 @@ window.switchTab = function switchTab(tab) {
 }
 
 function renderCourseChips() {
-  const wrap = document.getElementById('course-chips');
-  if (!wrap) return;
+  const select = document.getElementById('course-filter-select');
+  if (!select) return;
   
-  // Get ALL courses from course_map, not just ones with assignments
   const courseMapData = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_course_map') || '{}');
   const allCourseNames = Object.values(courseMapData).filter(Boolean).sort();
   const assignmentCourses = new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean));
-  // Show all courses from map, mark ones with no assignments as dim
   const courses = allCourseNames.length ? allCourseNames : [...assignmentCourses].sort();
   
-  if (!courses.length) { wrap.innerHTML = ''; return; }
-  
-  const currentCourse = activeCourseFilter;
-  wrap.innerHTML = '';
-  const allSpan = document.createElement('span');
-  allSpan.className = 'chip' + (!currentCourse ? ' active' : '');
-  allSpan.textContent = 'All Courses';
-  allSpan.onclick = () => setCourseFilter(null, allSpan);
-  wrap.appendChild(allSpan);
-  courses.forEach(c => {
-    const sp = document.createElement('span');
-    sp.className = 'chip' + (currentCourse === c ? ' active' : '');
-    sp.textContent = c.split('-')[0].trim();
-    sp.onclick = () => setCourseFilter(c, sp);
-    wrap.appendChild(sp);
-  });
+  // Rebuild options
+  select.innerHTML = '<option value="">All Courses<\/option>' +
+    courses.map(c => '<option value="' + c.replace(/"/g,'&quot;') + '"' + (activeCourseFilter===c?' selected':'') + '>' + c.split('-')[0].trim() + '<\/option>').join('');
 }
 
 let activeCourseFilter = null;
 window.setCourseFilter = function(course, el) {
-  activeCourseFilter = course;
-  document.querySelectorAll('#course-chips .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  activeCourseFilter = course || null;
+  const select = document.getElementById('course-filter-select');
+  if (select && !el) select.value = course || '';
   renderCards();
 };
 
