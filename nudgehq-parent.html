@@ -1868,6 +1868,7 @@ let _cStatus = null;
 let _cRange = 'all';
 let _cPage = 0;
 const _cPageSize = 25;
+window._cExpanded = {};
 
 function renderCompleted() {
   const wrap = document.getElementById('completed-table');
@@ -1878,8 +1879,10 @@ function renderCompleted() {
 
   const now = new Date();
   let subs = [...allSubs];
+
+  // Filters
   if (_cCourse) subs = subs.filter(s => s.course === _cCourse);
-  if (_cStatus === 'late') subs = subs.filter(s => s.due && new Date(s.submitted_at) > new Date(s.due));
+  if (_cStatus === 'late')   subs = subs.filter(s => s.due && new Date(s.submitted_at) > new Date(s.due));
   if (_cStatus === 'ontime') subs = subs.filter(s => !s.due || new Date(s.submitted_at) <= new Date(s.due));
   if (_cStatus === 'graded') subs = subs.filter(s => s.score !== null && s.score !== undefined);
   const _quarters = {
@@ -1892,9 +1895,10 @@ function renderCompleted() {
     const [qs, qe] = _quarters[_cRange];
     subs = subs.filter(s => { const d = new Date(s.submitted_at); return d >= qs && d <= qe; });
   }
-  if (_cRange === 'week') subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 7*86400000));
+  if (_cRange === 'week')  subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 7*86400000));
   if (_cRange === 'month') subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 30*86400000));
 
+  // Sort
   subs.sort((a, b) => {
     if (_cSort === 'submitted_desc') return new Date(b.submitted_at) - new Date(a.submitted_at);
     if (_cSort === 'submitted_asc')  return new Date(a.submitted_at) - new Date(b.submitted_at);
@@ -1904,79 +1908,87 @@ function renderCompleted() {
   });
 
   const allCourses = [...new Set(allSubs.map(s => s.course).filter(Boolean))].sort();
-  // Apply pagination
-  const _totalPages = Math.ceil(subs.length / _cPageSize);
-  if (_cPage >= _totalPages) _cPage = Math.max(0, _totalPages - 1);
-  const pagedSubs = subs.slice(_cPage * _cPageSize, (_cPage + 1) * _cPageSize);
 
+  // Group by course
   const byCourse = {};
   const courseOrder = [];
-  pagedSubs.forEach(s => {
+  subs.forEach(s => {
     const c = s.course || 'Unknown';
     if (!byCourse[c]) { byCourse[c] = []; courseOrder.push(c); }
     byCourse[c].push(s);
   });
 
-  const chipStyle = (active) => 'cursor:pointer;padding:4px 10px;border-radius:20px;font-size:0.73rem;border:1px solid ' + (active?'#5a67d8':'var(--border)') + ';background:' + (active?'#eef0fb':'') + ';color:' + (active?'#5a67d8':'var(--subink)');
-
-  wrap.innerHTML =
-    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">' +
-      '<select onchange="_cSort=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
-        '<option value="submitted_desc"' + (_cSort==='submitted_desc'?' selected':'') + '>Submitted \u2193<\/option>' +
-        '<option value="submitted_asc"'  + (_cSort==='submitted_asc' ?' selected':'') + '>Submitted \u2191<\/option>' +
-        '<option value="due_desc"'       + (_cSort==='due_desc'      ?' selected':'') + '>Due date \u2193<\/option>' +
-        '<option value="due_asc"'        + (_cSort==='due_asc'       ?' selected':'') + '>Due date \u2191<\/option>' +
-      '<\/select>' +
-      '<select onchange="_cRange=this.value;_cPage=0;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
-        '<option value="all"' + (_cRange==='all'?' selected':'') + '>All time<\/option>' +
-        '<option value="q1"'  + (_cRange==='q1' ?' selected':'') + '>Q1 (Aug–Oct 2026)<\/option>' +
-        '<option value="q2"'  + (_cRange==='q2' ?' selected':'') + '>Q2 (Oct–Dec 2026)<\/option>' +
-        '<option value="q3"'  + (_cRange==='q3' ?' selected':'') + '>Q3 (Jan–Mar 2027)<\/option>' +
-        '<option value="q4"'  + (_cRange==='q4' ?' selected':'') + '>Q4 (Mar–May 2027)<\/option>' +
-        '<option value="month"' + (_cRange==='month'?' selected':'') + '>Last 30 days<\/option>' +
-        '<option value="week"'  + (_cRange==='week' ?' selected':'') + '>Last 7 days<\/option>' +
-      '<\/select>' +
-      '<select onchange="_cStatus=this.value||null;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
-        '<option value="">All status<\/option>' +
-        '<option value="ontime"' + (_cStatus==='ontime'?' selected':'') + '>On time<\/option>' +
-        '<option value="late"'   + (_cStatus==='late'  ?' selected':'') + '>Late<\/option>' +
-        '<option value="graded"' + (_cStatus==='graded'?' selected':'') + '>Graded<\/option>' +
-      '<\/select>' +
-      '<span style="font-size:0.75rem;color:var(--muted)">' + subs.length + ' assignments<\/span>' +
-
-    '<\/div>' +
-    '<select onchange="_cCourse=this.value||null;_cPage=0;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit;margin-bottom:12px;display:block">' +
+  // Controls
+  const controls = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">' +
+    '<select onchange="_cSort=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="submitted_desc"' + (_cSort==='submitted_desc'?' selected':'') + '>Submitted \u2193<\/option>' +
+      '<option value="submitted_asc"'  + (_cSort==='submitted_asc' ?' selected':'') + '>Submitted \u2191<\/option>' +
+      '<option value="due_desc"'       + (_cSort==='due_desc'      ?' selected':'') + '>Due \u2193<\/option>' +
+      '<option value="due_asc"'        + (_cSort==='due_asc'       ?' selected':'') + '>Due \u2191<\/option>' +
+    '<\/select>' +
+    '<select onchange="_cRange=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="all"'   + (_cRange==='all'  ?' selected':'') + '>All time<\/option>' +
+      '<option value="q1"'    + (_cRange==='q1'   ?' selected':'') + '>Q1<\/option>' +
+      '<option value="q2"'    + (_cRange==='q2'   ?' selected':'') + '>Q2<\/option>' +
+      '<option value="q3"'    + (_cRange==='q3'   ?' selected':'') + '>Q3<\/option>' +
+      '<option value="q4"'    + (_cRange==='q4'   ?' selected':'') + '>Q4<\/option>' +
+      '<option value="month"' + (_cRange==='month'?' selected':'') + '>Last 30 days<\/option>' +
+      '<option value="week"'  + (_cRange==='week' ?' selected':'') + '>Last 7 days<\/option>' +
+    '<\/select>' +
+    '<select onchange="_cStatus=this.value||null;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="">All status<\/option>' +
+      '<option value="ontime"' + (_cStatus==='ontime'?' selected':'') + '>On time<\/option>' +
+      '<option value="late"'   + (_cStatus==='late'  ?' selected':'') + '>Late<\/option>' +
+      '<option value="graded"' + (_cStatus==='graded'?' selected':'') + '>Graded<\/option>' +
+    '<\/select>' +
+    '<select onchange="_cCourse=this.value||null;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
       '<option value="">All Courses<\/option>' +
       allCourses.map(c => '<option value="' + c.replace(/"/g,'&quot;') + '"' + (_cCourse===c?' selected':'') + '>' + esc(c.split('-')[0].trim()) + '<\/option>').join('') +
     '<\/select>' +
-    courseOrder.map(course => {
-      const items = byCourse[course]; if (!items) return '';
-      return '<div style="margin-bottom:20px">' +
-        '<div style="font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--subink);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:4px">' +
-          esc(course.split('-')[0].trim()) + ' <span style="font-weight:400;color:var(--muted)">(' + items.length + ')<\/span>' +
-        '<\/div>' +
-        '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
-        '<thead><tr>' +
-          '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Assignment<\/th>' +
-          '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Due<\/th>' +
-          '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Submitted<\/th>' +
-          '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Score<\/th>' +
-        '<\/tr><\/thead><tbody>' +
-        items.map(s => {
-          const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '\u2014';
-          const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-          const score = s.score !== null && s.score !== undefined ? s.score + ' / ' + (s.points||'?') : '\u2014';
-          const late = s.due && new Date(s.submitted_at) > new Date(s.due);
-          return '<tr style="border-bottom:1px solid var(--border)">' +
-            '<td style="padding:5px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
-            '<td style="padding:5px 8px;color:var(--muted)">' + due + '<\/td>' +
-            '<td style="padding:5px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' \u26a0\ufe0f':'') + '<\/td>' +
-            '<td style="padding:5px 8px;text-align:right">' + score + '<\/td>' +
-          '<\/tr>';
-        }).join('') +
-        '<\/tbody><\/table><\/div>';
+    '<span style="font-size:0.75rem;color:var(--muted)">' + subs.length + ' assignments<\/span>' +
+  '<\/div>';
+
+  const PREVIEW = 25;
+
+  // Build collapsible course sections
+  const tables = courseOrder.map((course, ci) => {
+    const items = byCourse[course];
+    const collapsed = !window._cExpanded[ci] && items.length > PREVIEW;
+    const shown = collapsed ? items.slice(0, PREVIEW) : items;
+    const shortName = esc(course.split('-')[0].trim());
+
+    const rows = shown.map(s => {
+      const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '\u2014';
+      const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      const score = s.score !== null && s.score !== undefined ? s.score + ' \/ ' + (s.points||'?') : '\u2014';
+      const late = s.due && new Date(s.submitted_at) > new Date(s.due);
+      return '<tr style="border-bottom:1px solid var(--border)">' +
+        '<td style="padding:5px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
+        '<td style="padding:5px 8px;color:var(--muted)">' + due + '<\/td>' +
+        '<td style="padding:5px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' \u26a0\ufe0f':'') + '<\/td>' +
+        '<td style="padding:5px 8px;text-align:right">' + score + '<\/td>' +
+      '<\/tr>';
     }).join('');
-  window._nhqC = allCourses;
+
+    const showAllBtn = collapsed ?
+      '<div style="padding:8px;text-align:center"><button onclick="window._cExpanded[' + ci + ']=true;renderCompleted()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:0.78rem;color:var(--subink);cursor:pointer;">Show all ' + items.length + ' assignments<\/button><\/div>' : '';
+
+    return '<div style="margin-bottom:20px">' +
+      '<div style="font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--subink);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:4px">' +
+        shortName + ' <span style="font-weight:400;color:var(--muted)">(' + items.length + ')<\/span>' +
+      '<\/div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+      '<thead><tr>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Assignment<\/th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Due<\/th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Submitted<\/th>' +
+        '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Score<\/th>' +
+      '<\/tr><\/thead><tbody>' + rows + '<\/tbody><\/table>' +
+      showAllBtn +
+    '<\/div>';
+  }).join('');
+
+  wrap.innerHTML = controls + tables;
 }</script>
 </body>
 </html>
