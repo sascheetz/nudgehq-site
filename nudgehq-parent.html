@@ -296,7 +296,25 @@
   .tab-pane { display:none; }
   .tab-pane.active { display:block; }
 
-  @media(max-width:720px) { .shell{grid-template-columns:1fr} aside{position:static;height:auto} }
+  @media(max-width:720px) {
+    .shell{grid-template-columns:1fr}
+    aside{position:static;height:auto}
+    #grid{grid-template-columns:1fr !important}
+    .card{padding:10px;gap:6px;}
+    .c-title{font-size:0.92rem;}
+    .c-meta{font-size:0.78rem;}
+    .c-countdown{font-size:0.82rem;}
+    .nudge-btn{font-size:0.72rem;padding:4px 6px;}
+    .done-btn{font-size:0.72rem;padding:4px 8px;}
+    .card-note{font-size:0.75rem;}
+    .pill{font-size:0.68rem;padding:2px 7px;}
+    .c-course{font-size:0.68rem;}
+    .date-header{font-size:0.78rem;}
+    .stat-grid{grid-template-columns:repeat(3,1fr);}
+    .stat-num{font-size:1.3rem;}
+    aside{padding:12px;}
+    .wordmark h1{font-size:1.5rem;}
+  }
 </style>
 </head>
 <body>
@@ -1085,12 +1103,11 @@ function renderHACZeros() {
       <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
         <thead>
           <tr style="border-bottom:1px solid #fc8181;">
-            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Course</th>
-            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Assignment</th>
-            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Due</th>
-            <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">Score</th>
-            <th style="text-align:right;padding:4px 8px;color:#4a5568;font-weight:600;">%</th>
-            <th style="text-align:left;padding:4px 8px;color:#4a5568;font-weight:600;">Canvas</th>
+            <th style="text-align:left;padding:4px 6px;color:#4a5568;font-weight:600;font-size:0.75rem;white-space:nowrap;">Course</th>
+            <th style="text-align:left;padding:4px 6px;color:#4a5568;font-weight:600;font-size:0.75rem;">Assignment</th>
+            <th style="text-align:left;padding:4px 6px;color:#4a5568;font-weight:600;font-size:0.75rem;white-space:nowrap;">Due</th>
+            <th style="text-align:right;padding:4px 6px;color:#4a5568;font-weight:600;font-size:0.75rem;">Score</th>
+            <th style="text-align:left;padding:4px 6px;color:#4a5568;font-weight:600;font-size:0.75rem;">Canvas</th>
           </tr>
         </thead>
         <tbody>
@@ -1103,7 +1120,7 @@ function renderHACZeros() {
                                cs === 'not_in_canvas' ? '<span style="color:#9aa5b4;">📄 Paper only</span>' :
                                '<span style="color:#9aa5b4;">—</span>';
             return '<tr style="border-bottom:1px solid #fee2e2;">' +
-              '<td style="padding:6px 8px;color:#4a5568;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(z.course) + '</td>' +
+              '<td style="padding:4px 6px;color:#4a5568;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.72rem;">' + esc(z.course) + '</td>' +
               '<td style="padding:6px 8px;font-weight:500;color:#1a1d23;">' + esc(z.assignment) + '</td>' +
               '<td style="padding:6px 8px;color:#9aa5b4;">' + esc(z.dateDue||'') + '</td>' +
               '<td style="padding:6px 8px;text-align:right;font-weight:600;color:' + scoreColor + ';">' + esc(z.score) + '</td>' +
@@ -1305,7 +1322,8 @@ function updateStats() {
   // (student checking off doesn't mean it was actually submitted)
   const missing  = assignments.filter(a=>a.status==='missing'&&!parentDone[a.id]);
   const fire     = assignments.filter(a => { const d=a.due?(a.due instanceof Date?a.due:new Date(a.due)):null; if(!d)return false; const today=new Date();today.setHours(0,0,0,0); const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return Math.round((dd-today)/86400000)===0 && a.status==='upcoming' && !parentDone[a.id]; });
-  const checked  = Object.values(studentChecked).filter(Boolean).length;
+  const completedSubsData = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_completed_subs') || '[]');
+  const checked = completedSubsData.length;
   const misEl    = document.getElementById('s-missing'); if(misEl) misEl.textContent = missing.length||'0';
   const fireEl   = document.getElementById('s-fire');    if(fireEl) fireEl.textContent = fire.length||'0';
   const zerosEl  = document.getElementById('s-zeros');   if(zerosEl) zerosEl.textContent = zeroed.length||'0';
@@ -1498,6 +1516,9 @@ window.loadFromExtension = function(userId) {
   const courseMap     = JSON.parse(localStorage.getItem(prefix + 'course_map')     || '{}');
   const submittedIds  = new Set(JSON.parse(localStorage.getItem(prefix + 'submitted_ids')   || '[]'));
   const markedDoneIds = new Set(JSON.parse(localStorage.getItem(prefix + 'marked_done_ids') || '[]'));
+  // Load student check-offs and completed subs from bridge data
+  studentChecked  = JSON.parse(localStorage.getItem(prefix + 'student_checked')  || '{}');
+  studentSubTypes = JSON.parse(localStorage.getItem(prefix + 'student_subtypes') || '{}');
 
   if (!upcomingRaw.length && !missingRaw.length) {
     showToast('No data for ' + studentName + '. Open Canvas and sync.', 'err');
@@ -1977,7 +1998,7 @@ function renderCompleted() {
       '<div style="font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--subink);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:4px">' +
         shortName + ' <span style="font-weight:400;color:var(--muted)">(' + items.length + ')<\/span>' +
       '<\/div>' +
-      '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+      '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;"><table style="width:100%;border-collapse:collapse;font-size:0.75rem;min-width:480px;">' +
       '<thead><tr>' +
         '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Assignment<\/th>' +
         '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Due<\/th>' +
