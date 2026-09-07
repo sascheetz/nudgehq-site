@@ -85,17 +85,22 @@
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
   .s-missing { background: #fff5f5; border-color: #fc8181; }
-  .s-fire    { background: #fff8f0; border-color: #f6ad55; }
-  .s-zeroed  { background: #fff5f5; border-color: #fc8181; }
-  .s-zeroed  .stat-num { color: var(--fire); }
-  .s-soon    { background: #fffde7; border-color: #ffd600; }
+  .s-fire    { background: #fff5f5; border-color: #fc8181; }
+  .s-zeroed  { background: #e53e3e; border-color: #e53e3e; }
+  .s-zeroed  .stat-num { color: #fff; }
+  .s-zeroed  .stat-lbl { color: rgba(255,255,255,0.85); }
+  .s-soon    { background: #fff8f0; border-color: #f6ad55; }
   .s-soon    .stat-num { color: #ffd600; }
   .s-student { background: #f8f9fa; border-color: #c8cdd4; }
-  .s-chill   { background: #f0fff4; border-color: #68d391; }
-  .s-chill   .stat-num { color: #276749; }
+  .s-chill   { background: #fffde7; border-color: #ecc94b; }
+  .s-next    { background: #fffde7; border-color: #ecc94b; }
+  .s-next    .stat-num { color: #b7791f; }
+  .s-upcoming { background: #f0fff4; border-color: #68d391; }
+  .s-upcoming .stat-num { color: #276749; }
+  .s-chill   .stat-num { color: #b7791f; }
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
-  .stat-box.s-fire    .stat-num { color: var(--soon); }
+  .stat-box.s-fire    .stat-num { color: var(--fire); }
   .stat-box.s-missing .stat-num { color: var(--fire); }
   .stat-box.s-student .stat-num { color: #1a1d23; }
 
@@ -300,15 +305,16 @@
     .shell{grid-template-columns:1fr}
     aside{position:static;height:auto}
     #grid{grid-template-columns:1fr !important}
-    .card{padding:10px;gap:6px;}
-    .c-title{font-size:0.92rem;}
-    .c-meta{font-size:0.78rem;}
-    .c-countdown{font-size:0.82rem;}
-    .nudge-btn{font-size:0.72rem;padding:4px 6px;}
-    .done-btn{font-size:0.72rem;padding:4px 8px;}
-    .card-note{font-size:0.75rem;}
-    .pill{font-size:0.68rem;padding:2px 7px;}
-    .c-course{font-size:0.68rem;}
+    .card{padding:10px !important;gap:4px !important;}
+    .c-title{font-size:0.88rem !important;}
+    .c-meta{font-size:0.75rem !important;}
+    .c-countdown{font-size:0.78rem !important;}
+    .nudge-btn{font-size:0.7rem !important;padding:4px 6px !important;}
+    .done-btn{font-size:0.7rem !important;padding:4px 8px !important;}
+    .card-note{font-size:0.72rem !important;min-height:28px !important;}
+    .pill{font-size:0.65rem !important;padding:2px 6px !important;}
+    .c-course{font-size:0.65rem !important;}
+    .c-actions{gap:4px !important;}
     .date-header{font-size:0.78rem;}
     .stat-grid{grid-template-columns:repeat(3,1fr);}
     .stat-num{font-size:1.3rem;}
@@ -341,8 +347,8 @@
       <div class="stat-box s-missing"><div class="stat-num" id="s-missing">—</div><div class="stat-lbl">Missing</div></div>
       <div class="stat-box s-fire">   <div class="stat-num" id="s-fire">—</div>   <div class="stat-lbl">Due Today</div></div>
       <div class="stat-box s-soon">   <div class="stat-num" id="s-tomorrow">—</div><div class="stat-lbl">Tomorrow</div></div>
-      <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>    <div class="stat-lbl">This Week</div></div>
-      <div class="stat-box s-student"><div class="stat-num" id="s-checked">—</div><div class="stat-lbl">Submitted</div></div>
+      <div class="stat-box s-chill">  <div class="stat-num" id="s-all">—</div>      <div class="stat-lbl">This Week</div></div>
+      <div class="stat-box s-upcoming"><div class="stat-num" id="s-upcoming">—</div>  <div class="stat-lbl">Upcoming</div></div>
     </div>
   </div>
 
@@ -1008,8 +1014,7 @@ function getDateLabel(a) {
   const dow = today.getDay();
   const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
   if (diff <= daysUntilFriday) return '📅 This Week';
-  if (diff <= daysUntilFriday + 7) return '📅 Next Week';
-  return '📅 Later';
+  return '📅 Upcoming';
 }
 
 function checkTokenExpiry() {
@@ -1226,7 +1231,7 @@ function renderCards() {
     const _dueObj2 = a.due ? (a.due instanceof Date ? a.due : new Date(a.due)) : null;
     const _days2  = _dueObj2 ? Math.round((new Date(_dueObj2.getFullYear(),_dueObj2.getMonth(),_dueObj2.getDate()) - _today2) / 86400000) : 999;
     const _soonLabel = '🟠 Due Soon';
-    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: '🔴 Due Today', soon:'🟠 Due Tomorrow', ok:'🟡 This Week', chill:'🟢 Upcoming' }[pDone?'done':u] || '';
+    const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: '🔴 Due Today', soon:'🟠 Due Tomorrow', ok:'🟡 Next Week', chill:'⬜ Later' }[pDone?'done':u] || '';
     const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
