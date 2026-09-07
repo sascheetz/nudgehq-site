@@ -84,7 +84,9 @@
   
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
-  .s-missing { background: #fff5f5; border-color: #fc8181; }
+  .s-missing { background: #dd6b20; border-color: #dd6b20; }
+  .s-missing .stat-num { color: #fff; }
+  .s-missing .stat-lbl { color: rgba(255,255,255,0.85); }
   .s-fire    { background: #fff5f5; border-color: #fc8181; }
   .s-zeroed  { background: #e53e3e; border-color: #e53e3e; }
   .s-zeroed  .stat-num { color: #fff; }
@@ -1014,7 +1016,7 @@ function getDateLabel(a) {
   const dow = today.getDay();
   const daysUntilFriday = dow <= 5 ? (5 - dow) : 0;
   if (diff <= daysUntilFriday) return '📅 This Week';
-  return '📅 Upcoming';
+  return '📅 Upcoming';  // Next week and later both go in Upcoming section
 }
 
 function checkTokenExpiry() {
@@ -1232,7 +1234,7 @@ function renderCards() {
     const _days2  = _dueObj2 ? Math.round((new Date(_dueObj2.getFullYear(),_dueObj2.getMonth(),_dueObj2.getDate()) - _today2) / 86400000) : 999;
     const _soonLabel = '🟠 Due Soon';
     const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: '🔴 Due Today', soon:'🟠 Due Tomorrow', ok:'🟡 Next Week', chill:'⬜ Later' }[pDone?'done':u] || '';
-    const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', chill:'p-chill' }[u] || 'p-done';
+    const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', next:'p-ok', chill:'p-chill' }[u] || 'p-done';
 
     const card = document.createElement('div');
     const isZeroed = a.status === 'zeroed';
