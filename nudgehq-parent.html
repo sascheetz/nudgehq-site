@@ -334,7 +334,6 @@
     <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); document.querySelector('[data-tab=\'hac\']')?.click()">📊 Load HAC Data</button>
-    <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
 
     <button class="btn btn-secondary" onclick="window.sendGeneralReminder && window.sendGeneralReminder()">📲 Send General Reminder</button>
     <button class="btn btn-secondary" onclick="window.loadDemo && window.loadDemo()">Try Demo Data</button>
@@ -373,15 +372,19 @@
   <div id="panel-hac" style="display:none;padding-top:8px;"></div>
   <div id="panel-completed" style="display:none;padding-top:8px;"><div id="completed-table"></div></div>
   <div id="panel-assignments">
-  <div class="chips" id="filter-chips">
-    <span class="chip active"     onclick="setFilter('all',this)">All</span>
-    <span class="chip c-missing"  onclick="setFilter('missing',this)">⚠️ Missing</span>
-    <span class="chip c-fire"     onclick="setFilter('fire',this)">🔴 Due Today</span>
-    <span class="chip"            onclick="setFilter('soon',this)">🟠 This Week</span>
-    <span class="chip c-student"  onclick="setFilter('student-done',this)">✅ Submitted</span>
-    <span class="chip"            onclick="setFilter('done',this)">✓ Parent Done</span>
+  <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+    <select id="status-filter-select" onchange="setFilter(this.value,null)" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:0.87rem;font-family:inherit;color:var(--subink);background:var(--bg);cursor:pointer;outline:none;">
+      <option value="all">Course Status</option>
+      <option value="missing">⚠️ Missing</option>
+      <option value="fire">🔴 Due Today</option>
+      <option value="soon">🟠 This Week</option>
+      <option value="student-done">✅ Submitted</option>
+      <option value="done">✓ Parent Done</option>
+    </select>
+    <select id="course-filter-select" onchange="setCourseFilter(this.value||null, null)" style="padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:0.87rem;font-family:inherit;color:var(--subink);background:var(--bg);cursor:pointer;outline:none;">
+      <option value="">Course Name</option>
+    </select>
   </div>
-  <div class="chips" id="course-chips" style="margin-top:-8px;"></div>
 
   <!-- Missing banner (hidden) -->
   <div id="missing-banner" style="display:none!important">
@@ -522,7 +525,6 @@ Query: filter[]=submittable</pre></div></div>
       <button class="btn btn-primary" onclick="window.loadFromExtension && window.loadFromExtension()">🔌 Load from Extension</button>
     <button class="btn btn-secondary" onclick="window.loadAllFromCloud && window.loadAllFromCloud()">☁️ Load All from Cloud</button>
     <button class="btn btn-secondary" onclick="window.loadHACData && window.loadHACData(); document.querySelector('[data-tab=\'hac\']')?.click()">📊 Load HAC Data</button>
-    <button class="btn btn-secondary" onclick="window.exportCSV && window.exportCSV()">📥 Export to Sheets</button>
     </div>
 
         <!-- Twilio -->
@@ -1030,39 +1032,24 @@ window.switchTab = function switchTab(tab) {
 }
 
 function renderCourseChips() {
-  const wrap = document.getElementById('course-chips');
-  if (!wrap) return;
+  const select = document.getElementById('course-filter-select');
+  if (!select) return;
   
-  // Get ALL courses from course_map, not just ones with assignments
   const courseMapData = JSON.parse(localStorage.getItem('nhq_' + (activeUserId||'50904') + '_course_map') || '{}');
   const allCourseNames = Object.values(courseMapData).filter(Boolean).sort();
   const assignmentCourses = new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean));
-  // Show all courses from map, mark ones with no assignments as dim
   const courses = allCourseNames.length ? allCourseNames : [...assignmentCourses].sort();
   
-  if (!courses.length) { wrap.innerHTML = ''; return; }
-  
-  const currentCourse = activeCourseFilter;
-  wrap.innerHTML = '';
-  const allSpan = document.createElement('span');
-  allSpan.className = 'chip' + (!currentCourse ? ' active' : '');
-  allSpan.textContent = 'All Courses';
-  allSpan.onclick = () => setCourseFilter(null, allSpan);
-  wrap.appendChild(allSpan);
-  courses.forEach(c => {
-    const sp = document.createElement('span');
-    sp.className = 'chip' + (currentCourse === c ? ' active' : '');
-    sp.textContent = c.split('-')[0].trim();
-    sp.onclick = () => setCourseFilter(c, sp);
-    wrap.appendChild(sp);
-  });
+  // Rebuild options
+  select.innerHTML = '<option value="">All Courses<\/option>' +
+    courses.map(c => '<option value="' + c.replace(/"/g,'&quot;') + '"' + (activeCourseFilter===c?' selected':'') + '>' + c.split('-')[0].trim() + '<\/option>').join('');
 }
 
 let activeCourseFilter = null;
 window.setCourseFilter = function(course, el) {
-  activeCourseFilter = course;
-  document.querySelectorAll('#course-chips .chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  activeCourseFilter = course || null;
+  const select = document.getElementById('course-filter-select');
+  if (select && !el) select.value = course || '';
   renderCards();
 };
 
@@ -1298,8 +1285,8 @@ function renderCards() {
 
 window.setFilter = function(f,el) {
   activeFilter = f;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
+  const sel = document.getElementById('status-filter-select');
+  if (sel && !el) sel.value = f;
   renderCards();
 };
 
@@ -1540,7 +1527,10 @@ window.loadFromExtension = function(userId) {
   upcomingRaw.filter(e => e.type === 'Assignment' || e.assignment).forEach(e => {
     const a = e.assignment || e;
     const id = String(a.id || e.id);
-    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
+    const _bareId1 = id.replace(/^assignment_/, '');
+    if (seen.has(id) || submittedIds.has(id) || submittedIds.has(_bareId1) || markedDoneIds.has(id) || markedDoneIds.has(_bareId1)) return;
+    // Also skip if assignment has a score (pending_review case)
+    if (a.submission && a.submission.score !== null && a.submission.score !== undefined) return;
     const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
     if (!due || due < academicYearStart) return;
     const title = a.name || a.title || e.title || '';
@@ -1871,36 +1861,134 @@ document.addEventListener('click', function(e) {
   if (tab === 'completed') renderCompleted();
 });
 
+// Completed tab state
+let _cSort = 'submitted_desc';
+let _cCourse = null;
+let _cStatus = null;
+let _cRange = 'all';
+let _cPage = 0;
+const _cPageSize = 25;
+window._cExpanded = {};
+
 function renderCompleted() {
   const wrap = document.getElementById('completed-table');
   if (!wrap) return;
   const userId = localStorage.getItem('nhq_user_ids') ? JSON.parse(localStorage.getItem('nhq_user_ids'))[0] : '50904';
-  const subs = JSON.parse(localStorage.getItem('nhq_' + userId + '_completed_subs') || '[]');
-  if (!subs.length) { wrap.innerHTML = '<p style="color:var(--muted);padding:20px">No completed assignments yet. Sync from Canvas first.</p>'; return; }
-  
-  wrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
-    '<thead><tr style="border-bottom:2px solid var(--border)">' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Course<\/th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Assignment<\/th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Due<\/th>' +
-    '<th style="text-align:left;padding:6px 8px;color:var(--subink)">Submitted<\/th>' +
-    '<th style="text-align:right;padding:6px 8px;color:var(--subink)">Score<\/th>' +
-    '<\/tr><\/thead><tbody>' +
-    subs.map(s => {
-      const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+  let allSubs = JSON.parse(localStorage.getItem('nhq_' + userId + '_completed_subs') || '[]');
+  if (!allSubs.length) { wrap.innerHTML = '<p style="color:var(--muted);padding:20px">No completed assignments yet. Sync from Canvas first.<\/p>'; return; }
+
+  const now = new Date();
+  let subs = [...allSubs];
+
+  // Filters
+  if (_cCourse) subs = subs.filter(s => s.course === _cCourse);
+  if (_cStatus === 'late')   subs = subs.filter(s => s.due && new Date(s.submitted_at) > new Date(s.due));
+  if (_cStatus === 'ontime') subs = subs.filter(s => !s.due || new Date(s.submitted_at) <= new Date(s.due));
+  if (_cStatus === 'graded') subs = subs.filter(s => s.score !== null && s.score !== undefined);
+  const _quarters = {
+    q1: [new Date('2026-08-13'), new Date('2026-10-15T23:59:59')],
+    q2: [new Date('2026-10-19'), new Date('2026-12-18T23:59:59')],
+    q3: [new Date('2027-01-05'), new Date('2027-03-11T23:59:59')],
+    q4: [new Date('2027-03-15'), new Date('2027-05-20T23:59:59')],
+  };
+  if (_quarters[_cRange]) {
+    const [qs, qe] = _quarters[_cRange];
+    subs = subs.filter(s => { const d = new Date(s.submitted_at); return d >= qs && d <= qe; });
+  }
+  if (_cRange === 'week')  subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 7*86400000));
+  if (_cRange === 'month') subs = subs.filter(s => new Date(s.submitted_at) > new Date(now - 30*86400000));
+
+  // Sort
+  subs.sort((a, b) => {
+    if (_cSort === 'submitted_desc') return new Date(b.submitted_at) - new Date(a.submitted_at);
+    if (_cSort === 'submitted_asc')  return new Date(a.submitted_at) - new Date(b.submitted_at);
+    if (_cSort === 'due_desc')       return new Date(b.due||0) - new Date(a.due||0);
+    if (_cSort === 'due_asc')        return new Date(a.due||0) - new Date(b.due||0);
+    return (a.course||'').localeCompare(b.course||'');
+  });
+
+  const allCourses = [...new Set(allSubs.map(s => s.course).filter(Boolean))].sort();
+
+  // Group by course
+  const byCourse = {};
+  const courseOrder = [];
+  subs.forEach(s => {
+    const c = s.course || 'Unknown';
+    if (!byCourse[c]) { byCourse[c] = []; courseOrder.push(c); }
+    byCourse[c].push(s);
+  });
+
+  // Controls
+  const controls = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">' +
+    '<select onchange="_cSort=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="submitted_desc"' + (_cSort==='submitted_desc'?' selected':'') + '>Submitted \u2193<\/option>' +
+      '<option value="submitted_asc"'  + (_cSort==='submitted_asc' ?' selected':'') + '>Submitted \u2191<\/option>' +
+      '<option value="due_desc"'       + (_cSort==='due_desc'      ?' selected':'') + '>Due \u2193<\/option>' +
+      '<option value="due_asc"'        + (_cSort==='due_asc'       ?' selected':'') + '>Due \u2191<\/option>' +
+    '<\/select>' +
+    '<select onchange="_cRange=this.value;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="all"'   + (_cRange==='all'  ?' selected':'') + '>All time<\/option>' +
+      '<option value="q1"'    + (_cRange==='q1'   ?' selected':'') + '>Q1<\/option>' +
+      '<option value="q2"'    + (_cRange==='q2'   ?' selected':'') + '>Q2<\/option>' +
+      '<option value="q3"'    + (_cRange==='q3'   ?' selected':'') + '>Q3<\/option>' +
+      '<option value="q4"'    + (_cRange==='q4'   ?' selected':'') + '>Q4<\/option>' +
+      '<option value="month"' + (_cRange==='month'?' selected':'') + '>Last 30 days<\/option>' +
+      '<option value="week"'  + (_cRange==='week' ?' selected':'') + '>Last 7 days<\/option>' +
+    '<\/select>' +
+    '<select onchange="_cStatus=this.value||null;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="">All status<\/option>' +
+      '<option value="ontime"' + (_cStatus==='ontime'?' selected':'') + '>On time<\/option>' +
+      '<option value="late"'   + (_cStatus==='late'  ?' selected':'') + '>Late<\/option>' +
+      '<option value="graded"' + (_cStatus==='graded'?' selected':'') + '>Graded<\/option>' +
+    '<\/select>' +
+    '<select onchange="_cCourse=this.value||null;renderCompleted()" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:inherit">' +
+      '<option value="">All Courses<\/option>' +
+      allCourses.map(c => '<option value="' + c.replace(/"/g,'&quot;') + '"' + (_cCourse===c?' selected':'') + '>' + esc(c.split('-')[0].trim()) + '<\/option>').join('') +
+    '<\/select>' +
+    '<span style="font-size:0.75rem;color:var(--muted)">' + subs.length + ' assignments<\/span>' +
+  '<\/div>';
+
+  const PREVIEW = 25;
+
+  // Build collapsible course sections
+  const tables = courseOrder.map((course, ci) => {
+    const items = byCourse[course];
+    const collapsed = !window._cExpanded[ci] && items.length > PREVIEW;
+    const shown = collapsed ? items.slice(0, PREVIEW) : items;
+    const shortName = esc(course.split('-')[0].trim());
+
+    const rows = shown.map(s => {
+      const due = s.due ? new Date(s.due).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '\u2014';
       const sub = new Date(s.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
-      const score = s.score !== null && s.score !== undefined ? s.score + ' / ' + (s.points||'?') : '—';
+      const score = s.score !== null && s.score !== undefined ? s.score + ' \/ ' + (s.points||'?') : '\u2014';
       const late = s.due && new Date(s.submitted_at) > new Date(s.due);
       return '<tr style="border-bottom:1px solid var(--border)">' +
-        '<td style="padding:6px 8px;color:var(--subink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(s.course) + '<\/td>' +
-        '<td style="padding:6px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
-        '<td style="padding:6px 8px;color:var(--muted)">' + due + '<\/td>' +
-        '<td style="padding:6px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' ⚠️':'') + '<\/td>' +
-        '<td style="padding:6px 8px;text-align:right">' + score + '<\/td>' +
-        '<\/tr>';
-    }).join('') +
-    '<\/tbody><\/table>';
-}
-</script>
+        '<td style="padding:5px 8px;font-weight:500">' + esc(s.title) + '<\/td>' +
+        '<td style="padding:5px 8px;color:var(--muted)">' + due + '<\/td>' +
+        '<td style="padding:5px 8px;color:' + (late?'#dd6b20':'#38a169') + '">' + sub + (late?' \u26a0\ufe0f':'') + '<\/td>' +
+        '<td style="padding:5px 8px;text-align:right">' + score + '<\/td>' +
+      '<\/tr>';
+    }).join('');
+
+    const showAllBtn = collapsed ?
+      '<div style="padding:8px;text-align:center"><button onclick="window._cExpanded[' + ci + ']=true;renderCompleted()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:0.78rem;color:var(--subink);cursor:pointer;">Show all ' + items.length + ' assignments<\/button><\/div>' : '';
+
+    return '<div style="margin-bottom:20px">' +
+      '<div style="font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--subink);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:4px">' +
+        shortName + ' <span style="font-weight:400;color:var(--muted)">(' + items.length + ')<\/span>' +
+      '<\/div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+      '<thead><tr>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Assignment<\/th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Due<\/th>' +
+        '<th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Submitted<\/th>' +
+        '<th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;font-size:0.75rem">Score<\/th>' +
+      '<\/tr><\/thead><tbody>' + rows + '<\/tbody><\/table>' +
+      showAllBtn +
+    '<\/div>';
+  }).join('');
+
+  wrap.innerHTML = controls + tables;
+}</script>
 </body>
 </html>
