@@ -84,7 +84,7 @@
   
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
   .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
-  .s-missing { background: #dd6b20; border-color: #dd6b20; }
+  .s-missing { background: #f97316; border-color: #f97316; }
   .s-missing .stat-num { color: #fff; }
   .s-missing .stat-lbl { color: rgba(255,255,255,0.85); }
   .s-fire    { background: #fff5f5; border-color: #fc8181; }
@@ -103,7 +103,7 @@
   .stat-num { font-family: var(--serif); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--ink); }
   .stat-lbl { font-size: 0.80rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; }
   .stat-box.s-fire    .stat-num { color: var(--fire); }
-  .stat-box.s-missing .stat-num { color: var(--fire); }
+  .stat-box
   .stat-box.s-student .stat-num { color: #1a1d23; }
 
   .guide-btn { background: none; border: 1px dashed var(--border); border-radius: 7px; padding: 9px 12px; font-family: var(--serif); font-size: 0.92rem; color: var(--subink); cursor: pointer; text-align: left; transition: all 0.15s; width: 100%; margin-bottom: 5px; }
@@ -169,6 +169,7 @@
   .p-soon    { background: rgba(255,144,64,0.12);  color: var(--soon);    border: 1px solid rgba(255,144,64,0.3); }
   .p-ok      { background: rgba(236,201,75,0.15);  color: #b7791f;        border: 1px solid rgba(236,201,75,0.4); }
   .p-chill   { background: rgba(62,207,142,0.1);   color: var(--chill);   border: 1px solid rgba(62,207,142,0.25); }
+  .p-later   { background: #f1f3f5; color: #868e96; border: 1px solid #ced4da; }
   .p-done    { background: var(--surface2);         color: var(--muted);   border: 1px solid var(--border); }
   .p-student { background: rgba(245,166,35,0.12);  color: var(--student); border: 1px solid rgba(245,166,35,0.3); }
 
@@ -970,10 +971,13 @@ function urgency(a) {
   const dueLoc = (a.due instanceof Date) ? a.due : new Date(a.due);
   const dueDay = new Date(dueLoc.getFullYear(), dueLoc.getMonth(), dueLoc.getDate());
   const days   = Math.round((dueDay - today) / 86400000);
-  if (days <= 0) return 'fire';   // due today
+  if (days <= 0) return 'fire';   // due today or overdue
   if (days <= 1) return 'soon';   // due tomorrow
-  if (days <= 5) return 'ok';     // this week
-  return 'chill';                 // 6+ days away
+  const dow = today.getDay();     // 0=Sun,1=Mon,...,5=Fri
+  const daysToFriday = dow <= 5 ? (5 - dow) : 1;
+  if (days <= daysToFriday) return 'ok';           // this week
+  if (days <= daysToFriday + 7) return 'next';     // next week
+  return 'chill';                                  // later
 }
 function countdown(a) {
   if (a.status==='zeroed')  return 'Graded as zero — never submitted';
@@ -1234,7 +1238,7 @@ function renderCards() {
     const _days2  = _dueObj2 ? Math.round((new Date(_dueObj2.getFullYear(),_dueObj2.getMonth(),_dueObj2.getDate()) - _today2) / 86400000) : 999;
     const _soonLabel = '🟠 Due Soon';
     const pillLabel = { zeroed:'🔴 Graded Zero', missing:'⚠️ Missing', fire: '🔴 Due Today', soon:'🟠 Due Tomorrow', ok:'🟡 Next Week', chill:'⬜ Later' }[pDone?'done':u] || '';
-    const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', next:'p-ok', chill:'p-chill' }[u] || 'p-done';
+    const pillCls   = { zeroed:'p-zeroed', missing:'p-missing', fire:'p-fire', soon:'p-soon', ok:'p-ok', next:'p-chill', chill:'p-later' }[u] || 'p-done';
 
     const card = document.createElement('div');
     const isZeroed = a.status === 'zeroed';
