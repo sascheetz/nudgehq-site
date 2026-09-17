@@ -7,6 +7,7 @@ interface Props {
   userIds: string[];
   activeUserId: string | null;
   studentName: string;
+  isMobile: boolean;
   onSwitchChild: (id: string) => void;
   onLoadFromExtension: () => void;
   onLoadAllFromCloud: () => void;
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export function Sidebar(props: Props) {
-  const { assignments, parentDone, userIds, activeUserId, studentName } = props;
+  const { assignments, parentDone, userIds, activeUserId, studentName, isMobile } = props;
 
   const zeroed = assignments.filter(a => a.status === 'zeroed' && !parentDone[a.id]);
   const missing = assignments.filter(a => a.status === 'missing' && !parentDone[a.id]);
@@ -97,13 +98,13 @@ export function Sidebar(props: Props) {
       {/* Stats */}
       <div className="s-section">
         <div style={{ fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.16em', color: 'var(--muted)', marginBottom: '9px' }}>At a Glance</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '7px' }}>
-          <StatBox value={zeroed.length} label="Graded Zero" variant="zeroed" />
-          <StatBox value={missing.length} label="Missing" variant="missing" />
-          <StatBox value={fire.length} label="Due Today" variant="fire" />
-          <StatBox value={tomorrow.length} label="Tomorrow" variant="soon" />
-          <StatBox value={thisWeek.length} label="This Week" variant="chill" />
-          <StatBox value={upcoming.length} label="Upcoming" variant="upcoming" />
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : '1fr 1fr', gap: isMobile ? '5px' : '7px' }}>
+          <StatBox value={zeroed.length} label="Graded Zero" variant="zeroed" isMobile={isMobile} />
+          <StatBox value={missing.length} label="Missing" variant="missing" isMobile={isMobile} />
+          <StatBox value={fire.length} label="Due Today" variant="fire" isMobile={isMobile} />
+          <StatBox value={tomorrow.length} label="Tomorrow" variant="soon" isMobile={isMobile} />
+          <StatBox value={thisWeek.length} label="This Week" variant="chill" isMobile={isMobile} />
+          <StatBox value={upcoming.length} label="Upcoming" variant="upcoming" isMobile={isMobile} />
         </div>
       </div>
 
@@ -126,7 +127,7 @@ export function Sidebar(props: Props) {
   );
 }
 
-function StatBox({ value, label, variant }: { value: number; label: string; variant: string }) {
+function StatBox({ value, label, variant, isMobile }: { value: number; label: string; variant: string; isMobile: boolean }) {
   const styles: Record<string, { bg: string; border: string; numColor: string; lblColor: string }> = {
     zeroed: { bg: '#e53e3e', border: '#e53e3e', numColor: '#fff', lblColor: 'rgba(255,255,255,0.85)' },
     missing: { bg: '#f97316', border: '#f97316', numColor: '#fff', lblColor: 'rgba(255,255,255,0.85)' },
@@ -140,12 +141,12 @@ function StatBox({ value, label, variant }: { value: number; label: string; vari
     <div style={{
       background: s.bg,
       border: `1px solid ${s.border}`,
-      borderRadius: '8px',
-      padding: '10px',
+      borderRadius: isMobile ? '6px' : '8px',
+      padding: isMobile ? '6px 4px' : '10px',
       textAlign: 'center',
     }}>
-      <div style={{ fontWeight: 600, fontSize: '1.7rem', lineHeight: 1, color: s.numColor }}>{value || 0}</div>
-      <div style={{ fontSize: '0.8rem', color: s.lblColor, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: '3px' }}>{label}</div>
+      <div style={{ fontWeight: 600, fontSize: isMobile ? '1.2rem' : '1.7rem', lineHeight: 1, color: s.numColor }}>{value || 0}</div>
+      <div style={{ fontSize: isMobile ? '0.6rem' : '0.8rem', color: s.lblColor, textTransform: 'uppercase', letterSpacing: isMobile ? '0.06em' : '0.12em', marginTop: '2px' }}>{label}</div>
     </div>
   );
 }

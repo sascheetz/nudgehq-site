@@ -36,11 +36,15 @@ export default function App() {
   const [completedSubs, setCompletedSubs] = useState<CompletedSub[]>([]);
   const [nudgeSentIds, setNudgeSentIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 720);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
   const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 720);
+    const handler = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth > 768 && window.innerWidth <= 1024);
+    };
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, []);
@@ -292,6 +296,7 @@ export default function App() {
                 userIds={userIds}
                 activeUserId={activeUserId}
                 studentName={studentName}
+                isMobile={true}
                 onSwitchChild={(id) => { doLoadFromExtension(id); setSidebarOpen(false); }}
                 onLoadFromExtension={() => { doLoadFromExtension(); setSidebarOpen(false); }}
                 onLoadAllFromCloud={() => { handleLoadAllFromCloud(); setSidebarOpen(false); }}
@@ -311,6 +316,7 @@ export default function App() {
             userIds={userIds}
             activeUserId={activeUserId}
             studentName={studentName}
+            isMobile={false}
             onSwitchChild={(id) => doLoadFromExtension(id)}
             onLoadFromExtension={() => doLoadFromExtension()}
             onLoadAllFromCloud={handleLoadAllFromCloud}
@@ -423,7 +429,7 @@ export default function App() {
                 <p style={{ fontSize: '0.95rem', lineHeight: 1.75 }}>No assignments to show.<br />Load from Canvas API or try demo data.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: isMobile ? '8px' : '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: isMobile ? '8px' : '12px' }}>
                 {reorderedList.map((item, idx) => {
                   if ('__sectionHeader' in item) {
                     return (
@@ -449,6 +455,7 @@ export default function App() {
                         isStudentChecked={studentChecked[a.id] === true}
                         studentSubType={studentSubTypes[a.id]}
                         parentNote={parentNotes[a.id] || ''}
+                        isMobile={isMobile}
                         onToggleDone={() => toggleParentDone(a.id)}
                         onNudge={() => sendNudge(a.id, a.status === 'missing')}
                         onNoteChange={(note) => handleNoteChange(a.id, note)}
