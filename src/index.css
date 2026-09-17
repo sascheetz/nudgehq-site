@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f8f9fa;
+  --border: #e2e6ea;
+  --border2: #c8cdd4;
+  --ink: #1a1d23;
+  --subink: #4a5568;
+  --muted: #9aa5b4;
+  --fire: #e53e3e;
+  --soon: #dd6b20;
+  --ok: #3182ce;
+  --chill: #38a169;
+  --accent: #5a67d8;
+  --missing: #805ad5;
+  --student: #f97316;
+  --zeroed: #e53e3e;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* HAC table horizontal scroll */
+.hac-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}

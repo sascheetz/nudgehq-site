@@ -1,0 +1,335 @@
+import type { Assignment, CompletedSub, HACZero, SubType } from './types';
+import { countdown } from './utils';
+
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec';
+const PARENT_ID = '51186';
+
+export function getUserIds(): string[] {
+  const all = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+  return all.filter((id: string) => id !== PARENT_ID);
+}
+
+export function getStudentName(userId: string): string {
+  return localStorage.getItem('nhq_' + userId + '_name') || 'Student';
+}
+
+export function loadFromExtension(userId: string): { assignments: Assignment[]; studentChecked: Record<string, boolean>; studentSubTypes: Record<string, SubType>; syncedAt: string; studentName: string } {
+  const prefix = 'nhq_' + userId + '_';
+  const parentDone: Record<string, boolean> = JSON.parse(localStorage.getItem('nhq_parent_done') || '{}');
+
+  const syncedAt = localStorage.getItem(prefix + 'synced_at') || '';
+  const studentName = localStorage.getItem(prefix + 'name') || 'Student';
+
+  // Try pre-processed assignments first
+  const preProcessed = localStorage.getItem(prefix + 'assignments');
+  if (preProcessed) {
+    let assignments: Assignment[] = JSON.parse(preProcessed).map((a: any) => ({
+      ...a,
+      due: a.due ? new Date(a.due) : null,
+    }));
+    assignments = assignments.filter(a => !parentDone[a.id]);
+    const thirtyAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    assignments = assignments.filter(a => {
+      if (a.status === 'missing') {
+        if (!a.due) return true;
+        const d = a.due instanceof Date ? a.due : new Date(a.due);
+        if (d < thirtyAgo) return false;
+      }
+      return true;
+    });
+    const studentChecked: Record<string, boolean> = JSON.parse(localStorage.getItem(prefix + 'student_checked') || '{}');
+    const studentSubTypes: Record<string, SubType> = JSON.parse(localStorage.getItem(prefix + 'student_subtypes') || '{}');
+    return { assignments, studentChecked, studentSubTypes, syncedAt, studentName };
+  }
+
+  // Fall back to raw data
+  const upcomingRaw = JSON.parse(localStorage.getItem(prefix + 'upcoming_raw') || '[]');
+  const missingRaw = JSON.parse(localStorage.getItem(prefix + 'missing_raw') || '[]');
+  const zerosRaw = JSON.parse(localStorage.getItem(prefix + 'zeros_raw') || '[]');
+  const plannerRaw = JSON.parse(localStorage.getItem(prefix + 'planner_raw') || '[]');
+  const courseMap: Record<string, string> = JSON.parse(localStorage.getItem(prefix + 'course_map') || '{}');
+  const submittedIds = new Set<string>(JSON.parse(localStorage.getItem(prefix + 'submitted_ids') || '[]'));
+  const markedDoneIds = new Set<string>(JSON.parse(localStorage.getItem(prefix + 'marked_done_ids') || '[]'));
+  const studentChecked: Record<string, boolean> = JSON.parse(localStorage.getItem(prefix + 'student_checked') || '{}');
+  const studentSubTypes: Record<string, SubType> = JSON.parse(localStorage.getItem(prefix + 'student_subtypes') || '{}');
+
+  if (!upcomingRaw.length && !missingRaw.length && !zerosRaw.length) {
+    return { assignments: [], studentChecked, studentSubTypes, syncedAt, studentName };
+  }
+
+  const now = new Date();
+  const academicYearStart = new Date(now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1, 7, 1);
+  const seen = new Set<string>();
+  const assignments: Assignment[] = [];
+
+  // Add graded zeros first
+  zerosRaw.forEach((a: any) => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({
+      id, title: a.title || 'Untitled', course: a.course || courseMap[String(a.course_id)] || '',
+      due: a.due ? new Date(a.due) : null, status: 'zeroed',
+      points: a.points || null, grade: a.grade, score: a.score, source: 'api',
+    });
+  });
+
+  missingRaw.forEach((a: any) => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({
+      id, title: a.name || 'Untitled', course: courseMap[String(a.course_id)] || '',
+      due: a.due_at ? new Date(a.due_at) : null, status: 'missing',
+      points: a.points_possible || null, source: 'api',
+    });
+  });
+
+  upcomingRaw.filter((e: any) => e.type === 'Assignment' || e.assignment).forEach((e: any) => {
+    const a = e.assignment || e;
+    const id = String(a.id || e.id);
+    const bareId = id.replace(/^assignment_/, '');
+    if (seen.has(id) || submittedIds.has(id) || submittedIds.has(bareId) || markedDoneIds.has(id) || markedDoneIds.has(bareId)) return;
+    if (a.submission && a.submission.score !== null && a.submission.score !== undefined) return;
+    const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
+    if (!due || due < academicYearStart) return;
+    const title = a.name || a.title || e.title || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title, course: courseMap[String(a.course_id || e.course_id)] || e.context_name || '',
+      due, status: 'upcoming', points: a.points_possible || null, source: 'api',
+    });
+  });
+
+  plannerRaw.filter((p: any) => p.plannable_type === 'assignment' && p.plannable).forEach((p: any) => {
+    const id = String(p.plannable_id);
+    if (seen.has(id) || submittedIds.has(id) || markedDoneIds.has(id)) return;
+    const due = p.plannable.due_at ? new Date(p.plannable.due_at) : null;
+    if (!due || due < academicYearStart) return;
+    const title = p.plannable.title || p.plannable.name || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title, course: courseMap[String(p.course_id)] || '',
+      due, status: 'upcoming', points: p.plannable.points_possible || null, source: 'api',
+    });
+  });
+
+  // Dedup by title+date
+  const titleDueSet = new Set<string>();
+  let deduped = assignments.filter(a => {
+    const key = a.title.trim().toLowerCase() + '|' + (a.due ? a.due.toDateString() : 'nodue');
+    if (titleDueSet.has(key)) return false;
+    titleDueSet.add(key);
+    return true;
+  });
+
+  deduped = deduped.filter(a => !parentDone[a.id]);
+
+  // Filter missing older than 30 days
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  deduped = deduped.filter(a => {
+    if (a.status === 'missing') {
+      if (!a.due) return true;
+      const dueDate = a.due instanceof Date ? a.due : new Date(a.due);
+      if (dueDate < thirtyDaysAgo) return false;
+    }
+    return true;
+  });
+
+  deduped.sort((a, b) => {
+    const order = { zeroed: 0, missing: 1, upcoming: 2 };
+    const ao = order[a.status] ?? 2;
+    const bo = order[b.status] ?? 2;
+    if (ao !== bo) return ao - bo;
+    return (a.due || new Date(9e15)).getTime() - (b.due || new Date(9e15)).getTime();
+  });
+
+  return { assignments: deduped, studentChecked, studentSubTypes, syncedAt, studentName };
+}
+
+export function loadHACZeros(): { zeros: HACZero[]; syncedAt: string } {
+  const zeros: HACZero[] = JSON.parse(localStorage.getItem('nhq_hac_zeros') || '[]');
+  const syncedAt = localStorage.getItem('nhq_hac_synced_at') || '';
+  return { zeros, syncedAt };
+}
+
+export function loadCompletedSubs(userId: string): CompletedSub[] {
+  return JSON.parse(localStorage.getItem('nhq_' + userId + '_completed_subs') || '[]');
+}
+
+export function getCourseMap(userId: string): Record<string, string> {
+  return JSON.parse(localStorage.getItem('nhq_' + userId + '_course_map') || '{}');
+}
+
+// Cloud sync via JSONP
+export function loadFromCloud(userId: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const cbName = 'nhq_cb_' + Date.now();
+    (window as any)[cbName] = (data: any) => {
+      delete (window as any)[cbName];
+      document.head.removeChild(s);
+      resolve(data);
+    };
+    const s = document.createElement('script');
+    s.src = CLOUD_URL + '?userId=' + userId + '&callback=' + cbName;
+    s.onerror = () => { delete (window as any)[cbName]; reject(new Error('Script load failed')); };
+    document.head.appendChild(s);
+    setTimeout(() => {
+      if ((window as any)[cbName]) {
+        delete (window as any)[cbName];
+        reject(new Error('Timeout'));
+      }
+    }, 10000);
+  });
+}
+
+export async function loadAllFromCloud(activeUserId: string | null): Promise<void> {
+  const userIds = getUserIds();
+  const targetIds = userIds.length ? userIds : ['50904'];
+  for (const uid of targetIds) {
+    try {
+      const json = await loadFromCloud(uid);
+      if (!json.ok) continue;
+      const d = json.data;
+      const prefix = 'nhq_' + uid + '_';
+      if (d.parent_done) { localStorage.setItem('nhq_parent_done', d.parent_done); }
+      if (d.parent_notes) { localStorage.setItem('nhq_parent_notes', d.parent_notes); }
+      localStorage.setItem(prefix + 'upcoming_raw', d.upcoming_raw || '[]');
+      localStorage.setItem(prefix + 'missing_raw', d.missing_raw || '[]');
+      localStorage.setItem(prefix + 'zeros_raw', d.zeros_raw || '[]');
+      localStorage.setItem(prefix + 'course_map', d.course_map || '{}');
+      localStorage.setItem(prefix + 'submitted_ids', d.submitted_ids || '[]');
+      localStorage.setItem(prefix + 'marked_done_ids', d.marked_done_ids || '[]');
+      localStorage.setItem(prefix + 'synced_at', d.synced_at || '');
+      localStorage.setItem(prefix + 'name', d.name || 'Student');
+      const existingIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
+      if (!existingIds.includes(uid)) {
+        existingIds.push(uid);
+        localStorage.setItem('nhq_user_ids', JSON.stringify(existingIds));
+      }
+    } catch (e) {
+      console.warn('Cloud load failed for', uid, e);
+    }
+  }
+  // Load HAC data
+  try {
+    const hacJson = await loadFromCloud('hac_50904');
+    if (hacJson.ok && hacJson.data?.hac_zeros) {
+      localStorage.setItem('nhq_hac_zeros', hacJson.data.hac_zeros);
+      localStorage.setItem('nhq_hac_synced_at', hacJson.data.synced_at || '');
+    }
+  } catch (e) {
+    console.warn('HAC cloud load failed', e);
+  }
+}
+
+let _cloudPushTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function scheduleCloudPush(activeUserId: string | null) {
+  if (_cloudPushTimer) clearTimeout(_cloudPushTimer);
+  _cloudPushTimer = setTimeout(() => pushToCloud(activeUserId), 3000);
+}
+
+async function pushToCloud(activeUserId: string | null) {
+  const userId = activeUserId || '50904';
+  const prefix = 'nhq_' + userId + '_';
+  const parentDone = JSON.parse(localStorage.getItem('nhq_parent_done') || '{}');
+  const parentNotes = JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}');
+  try {
+    await fetch(CLOUD_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        userId,
+        upcoming_raw: localStorage.getItem(prefix + 'upcoming_raw') || '[]',
+        missing_raw: localStorage.getItem(prefix + 'missing_raw') || '[]',
+        zeros_raw: localStorage.getItem(prefix + 'zeros_raw') || '[]',
+        course_map: localStorage.getItem(prefix + 'course_map') || '{}',
+        submitted_ids: localStorage.getItem(prefix + 'submitted_ids') || '[]',
+        marked_done_ids: localStorage.getItem(prefix + 'marked_done_ids') || '[]',
+        synced_at: localStorage.getItem(prefix + 'synced_at') || '',
+        name: localStorage.getItem(prefix + 'name') || '',
+        parent_done: JSON.stringify(parentDone),
+        parent_notes: JSON.stringify(parentNotes),
+      }),
+    });
+  } catch (e) {
+    console.warn('Cloud push failed:', e);
+  }
+}
+
+// Credential persistence
+const CRED_FIELDS = ['proxy-url', 'api-token', 'token-expiry', 'student-name', 'sheets-url', 'fb-url', 'fb-key', 'tw-sid', 'tw-token', 'tw-from', 'tw-to'];
+
+export function restoreCredential(id: string): string {
+  return localStorage.getItem('nhq_cred_' + id) || '';
+}
+
+export function saveCredential(id: string, value: string): void {
+  localStorage.setItem('nhq_cred_' + id, value);
+}
+
+export function clearAllCredentials(): void {
+  CRED_FIELDS.forEach(id => localStorage.removeItem('nhq_cred_' + id));
+}
+
+export function readQRParams(): void {
+  const p = new URLSearchParams(window.location.search);
+  const map: Record<string, string> = {
+    proxy: 'nhq_cred_proxy-url',
+    token: 'nhq_cred_api-token',
+    fbUrl: 'nhq_cred_fb-url',
+    fbKey: 'nhq_cred_fb-key',
+    twSid: 'nhq_cred_tw-sid',
+    twToken: 'nhq_cred_tw-token',
+    twFrom: 'nhq_cred_tw-from',
+    twTo: 'nhq_cred_tw-to',
+    name: 'nhq_cred_student-name',
+  };
+  let found = false;
+  Object.entries(map).forEach(([param, storageKey]) => {
+    const val = p.get(param);
+    if (val) { localStorage.setItem(storageKey, val); found = true; }
+  });
+  if (found && window.history.replaceState) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+// Twilio SMS
+export async function twilioSend(sid: string, token: string, from: string, to: string, body: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + btoa(`${sid}:${token}`),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({ To: to, From: from, Body: body }),
+    });
+    const d = await res.json();
+    if (d.sid) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+export function buildMissingMsg(a: Assignment, name: string): string {
+  return `${pick([`${name}! Just checking in 💙`, `Hey ${name} —`, `Hi ${name}!`])} ${pick([`Canvas is officially showing "${a.title}" (${a.course}) as missing.`, `It looks like "${a.title}" hasn't been submitted yet.`])}\n\n${pick(["No stress — even a late submission counts! We're here if you need help. ❤️", "You've totally got this. Want us to sit down together on it? ❤️"])}`;
+}
+
+export function buildEncMsg(a: Assignment, name: string): string {
+  const h = a.due ? (a.due.getTime() - new Date().getTime()) / 3600000 : 999;
+  const urgNote = h <= 24 ? '⚠️ This one is due TODAY!' : h <= 48 ? 'Due tomorrow — don\'t forget!' : `Due ${countdown(a)}.`;
+  return `${pick([`Hey ${name}! Just a heads up 💙`, `Quick reminder, ${name} 👋`])}\n\n📚 "${a.title}" (${a.course})\n${urgNote}\n\n${pick(["You've got this — one step at a time. ❤️", "We believe in you! ❤️"])}`;
+}
+
+export function buildAllMissingMsg(missing: Assignment[], name: string): string {
+  const list = missing.map(a => `• "${a.title}" (${a.course})`).join('\n');
+  return `${name}! Just checking in 💙 A few things are showing as officially missing in Canvas:\n\n${list}\n\nNo stress — you've totally got this. We're here if you need any help! ❤️`;
+}
