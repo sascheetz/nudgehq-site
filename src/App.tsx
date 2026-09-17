@@ -143,10 +143,22 @@ export default function App() {
     setAssignments(demoAssignments);
     setStudentChecked({ d8: true });
     setStudentSubTypes({
-      d6: { type: 'canvas', note: '' },
-      d8: { type: 'paper', note: '' },
-      d9: { type: 'external', note: 'Google Docs' },
-      d10: { type: 'both', note: 'Quizlet + Canvas' },
+      d1: { type: 'online_upload', note: '' },
+      d2: { type: 'online_text_entry', note: '' },
+      d3: { type: 'online_quiz', note: '' },
+      d4: { type: 'online_upload', note: '' },
+      d5: { type: 'discussion_topic', note: '' },
+      d6: { type: 'online_text_entry', note: '' },
+      d7: { type: 'online_upload', note: '' },
+      d8: { type: 'online_quiz', note: '' },
+      d9: { type: 'discussion_topic', note: '' },
+      d10: { type: 'media_recording', note: '' },
+      d11: { type: 'online_upload', note: '' },
+      d12: { type: 'online_text_entry', note: '' },
+      d13: { type: 'online_quiz', note: '' },
+      d14: { type: 'none', note: '' },
+      d15: { type: 'not_graded', note: '' },
+      d16: { type: 'online_upload', note: '' },
     });
     setCompletedSubs([
       { title: 'Civil War Causes — DBQ Essay', course: '7th Grade Social Studies', due: off(-13, 23, 59).toISOString(), submitted_at: off(-12, 14, 30).toISOString(), score: 45, points: 50 },

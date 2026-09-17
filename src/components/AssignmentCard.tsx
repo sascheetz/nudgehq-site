@@ -28,8 +28,27 @@ export function AssignmentCard({ assignment: a, isParentDone, isStudentChecked, 
     'u-' + u,
   ].filter(Boolean).join(' ');
 
-  const subTypeIcons: Record<string, string> = { paper: '📄', canvas: '🖥️', external: '🔗', both: '📤' };
+  const subTypeIcons: Record<string, string> = {
+    online_upload: '📎',
+    online_text_entry: '📝',
+    online_quiz: '📋',
+    discussion_topic: '💬',
+    media_recording: '🎥',
+    none: '📄',
+    not_graded: '📄',
+    paper: '📄',
+    canvas: '🖥️',
+    external: '🔗',
+    both: '📤',
+  };
   const subTypeLabels: Record<string, string> = {
+    online_upload: 'File Upload',
+    online_text_entry: 'Text Entry',
+    online_quiz: 'Quiz',
+    discussion_topic: 'Discussion',
+    media_recording: 'Media Recording',
+    none: 'In-Class / Paper',
+    not_graded: 'In-Class / Paper',
     paper: 'Paper — hand in class',
     canvas: 'Canvas — submit online',
     external: 'External platform',
@@ -89,14 +108,10 @@ export function AssignmentCard({ assignment: a, isParentDone, isStudentChecked, 
             ✅ He marked this done
           </span>
         )}
-        {studentSubType && studentSubType.type ? (
-          <span style={{ fontSize: isMobile ? '0.65rem' : '0.72rem', color: 'var(--subink)', marginTop: '4px', display: 'block', padding: isMobile ? '3px 6px' : '5px 8px', background: 'var(--surface2)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+        {studentSubType && studentSubType.type && (
+          <span style={{ fontSize: isMobile ? '0.75rem' : '0.78rem', color: '#4a5568', marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: isMobile ? '3px 8px' : '4px 10px', background: '#f1f5f9', borderRadius: '12px', width: 'fit-content' }}>
             {subTypeIcons[studentSubType.type] || '📋'} {subTypeLabels[studentSubType.type] || studentSubType.type}
             {studentSubType.note ? ` · ${studentSubType.note}` : ''}
-          </span>
-        ) : (
-          <span style={{ fontSize: isMobile ? '0.62rem' : '0.68rem', color: 'var(--muted)', marginTop: '4px', display: 'block' }}>
-            📋 Submission type not set
           </span>
         )}
       </div>
