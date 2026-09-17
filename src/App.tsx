@@ -429,7 +429,7 @@ export default function App() {
                 <p style={{ fontSize: '0.95rem', lineHeight: 1.75 }}>No assignments to show.<br />Load from Canvas API or try demo data.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(290px, 1fr))', gap: isMobile ? '8px' : '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))', gap: isMobile ? '8px' : '12px' }}>
                 {reorderedList.map((item, idx) => {
                   if ('__sectionHeader' in item) {
                     return (
