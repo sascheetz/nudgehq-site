@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import type { Assignment, HACZero, CompletedSub, TabKey } from './types';
 import { loadFromExtension, loadHACZeros, loadCompletedSubs, getUserIds, getCourseMap, loadAllFromCloud, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg, buildAllMissingMsg } from './data';
 import { urgency, getDateLabel, pillLabel, pillClass } from './utils';
@@ -443,9 +443,9 @@ export default function App() {
                   const prevItem = idx > 0 ? reorderedList[idx - 1] : null;
                   const showDateHeader = !prevItem || ('__sectionHeader' in prevItem) || getDateLabel(prevItem as Assignment) !== dateLabel;
                   return (
-                    <div key={a.id} style={{ gridColumn: '1 / -1' }}>
+                    <Fragment key={a.id}>
                       {showDateHeader && (
-                        <div style={{ fontSize: '0.88rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--subink)', padding: '16px 2px 6px', borderBottom: '1px solid var(--border)', marginBottom: '2px' }}>
+                        <div style={{ gridColumn: '1 / -1', fontSize: '0.88rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--subink)', padding: '16px 2px 6px', borderBottom: '1px solid var(--border)', marginBottom: '2px' }}>
                           {dateLabel}
                         </div>
                       )}
@@ -461,7 +461,7 @@ export default function App() {
                         onNoteChange={(note) => handleNoteChange(a.id, note)}
                         nudgeSent={nudgeSentIds.has(a.id)}
                       />
-                    </div>
+                    </Fragment>
                   );
                 })}
               </div>
