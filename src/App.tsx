@@ -69,6 +69,9 @@ export default function App() {
     setSyncedAt(result.syncedAt);
     setStudentName(result.studentName);
 
+    setParentDone(JSON.parse(localStorage.getItem('nhq_parent_done') || '{}'));
+    setParentNotes(JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}'));
+
     // Load HAC
     const hac = loadHACZeros();
     setHacZeros(hac.zeros);
@@ -102,11 +105,9 @@ export default function App() {
     await loadAllFromCloud(activeUserId);
     const ids = getUserIds();
     const uid = activeUserId && activeUserId !== 'demo' ? activeUserId : (ids[0] || '50904');
+    setActiveCourseFilter(null);
+    setActiveFilter('all');
     doLoadFromExtension(uid);
-    const hac = loadHACZeros();
-    setHacZeros(hac.zeros);
-    setHacSyncedAt(hac.syncedAt);
-    setCompletedSubs(loadCompletedSubs(uid));
     showToast('Loaded all data from cloud ✓', 'ok');
   };
 
