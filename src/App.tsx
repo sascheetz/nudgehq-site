@@ -140,6 +140,22 @@ export default function App() {
       d9: { type: 'external', note: 'Google Docs' },
       d10: { type: 'both', note: 'Quizlet + Canvas' },
     });
+    setCompletedSubs([
+      { title: 'Civil War Causes — DBQ Essay', course: '7th Grade Social Studies', due: off(-13, 23, 59).toISOString(), submitted_at: off(-12, 14, 30).toISOString(), score: 45, points: 50 },
+      { title: 'Cells & Organelles Diagram', course: '7th Grade Life Science', due: off(-9, 23, 59).toISOString(), submitted_at: off(-9, 10, 15).toISOString(), score: 28, points: 30 },
+      { title: 'Chapter 8 Reading Response', course: '7th Grade ELA', due: off(-15, 23, 59).toISOString(), submitted_at: off(-14, 20, 0).toISOString(), score: 18, points: 20 },
+      { title: 'Fractions Quiz — Unit 3', course: '7th Grade Math', due: off(-16, 23, 59).toISOString(), submitted_at: off(-15, 9, 0).toISOString(), score: 14, points: 15 },
+      { title: 'Spanish Vocabulary Quiz — Ch 3', course: 'Spanish I', due: off(-20, 23, 59).toISOString(), submitted_at: off(-19, 15, 30).toISOString(), score: 9, points: 10 },
+      { title: 'Plate Tectonics — Lab Report', course: '7th Grade Life Science', due: off(-22, 23, 59).toISOString(), submitted_at: off(-21, 16, 45).toISOString(), score: 19, points: 20 },
+      { title: 'Constitution — Study Guide', course: '7th Grade Social Studies', due: off(-25, 23, 59).toISOString(), submitted_at: off(-24, 11, 0).toISOString(), score: 33, points: 35 },
+      { title: 'The Giver — Chapter Questions', course: '7th Grade ELA', due: off(-28, 23, 59).toISOString(), submitted_at: off(-27, 19, 30).toISOString(), score: 38, points: 40 },
+      { title: 'Percent & Proportions — Problem Set', course: '7th Grade Math', due: off(-30, 23, 59).toISOString(), submitted_at: off(-29, 8, 0).toISOString(), score: 23, points: 25 },
+      { title: 'Spanish I — Chapter 3 Workbook', course: 'Spanish I', due: off(-32, 23, 59).toISOString(), submitted_at: off(-31, 13, 15).toISOString(), score: 19, points: 20 },
+      { title: 'PE Fitness Log — Week 5', course: 'Physical Education', due: off(-35, 23, 59).toISOString(), submitted_at: off(-34, 10, 0).toISOString(), score: 10, points: 10 },
+      { title: 'Art Portfolio — Sketch Study', course: 'Art', due: off(-38, 23, 59).toISOString(), submitted_at: off(-37, 14, 30).toISOString(), score: 68, points: 75 },
+      { title: 'Ecosystems — Vocabulary Quiz', course: '7th Grade Life Science', due: off(-40, 23, 59).toISOString(), submitted_at: off(-39, 9, 45).toISOString(), score: 8, points: 10 },
+      { title: 'Revolutionary War — Map Activity', course: '7th Grade Social Studies', due: off(-42, 23, 59).toISOString(), submitted_at: off(-41, 15, 0).toISOString(), score: 35, points: 40 },
+    ]);
     setSyncedAt('');
     setStudentName('Alex');
     setActiveUserId('demo');

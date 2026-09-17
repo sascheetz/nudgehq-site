@@ -61,7 +61,12 @@ export function CompletedTab({ subs }: Props) {
   }, [filtered]);
 
   if (!subs.length) {
-    return <p style={{ color: 'var(--muted)', padding: '20px' }}>No completed assignments yet. Sync from Canvas first.</p>;
+    return (
+      <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--muted)' }}>
+        <div style={{ fontStyle: 'italic', fontSize: '2.8rem', marginBottom: '10px' }}>✅</div>
+        <p style={{ fontSize: '0.95rem', lineHeight: 1.75 }}>No completed assignments yet.<br />Load from Extension or Load All from Cloud to populate this tab.</p>
+      </div>
+    );
   }
 
   const selectStyle: React.CSSProperties = {
