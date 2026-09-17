@@ -100,10 +100,13 @@ export default function App() {
   const handleLoadAllFromCloud = async () => {
     showToast('Loading from cloud...', '');
     await loadAllFromCloud(activeUserId);
-    doLoadFromExtension(activeUserId || undefined);
+    const ids = getUserIds();
+    const uid = activeUserId && activeUserId !== 'demo' ? activeUserId : (ids[0] || '50904');
+    doLoadFromExtension(uid);
     const hac = loadHACZeros();
     setHacZeros(hac.zeros);
     setHacSyncedAt(hac.syncedAt);
+    setCompletedSubs(loadCompletedSubs(uid));
     showToast('Loaded all data from cloud ✓', 'ok');
   };
 

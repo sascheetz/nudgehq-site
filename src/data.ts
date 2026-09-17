@@ -164,34 +164,54 @@ export function getCourseMap(userId: string): Record<string, string> {
 }
 
 // Cloud sync via JSONP
+let _cbCounter = 0;
+
 export function loadFromCloud(userId: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    const cbName = 'nhq_cb_' + Date.now();
-    (window as any)[cbName] = (data: any) => {
+    _cbCounter++;
+    const cbName = 'nhq_cb_' + Date.now() + '_' + _cbCounter;
+    const s = document.createElement('script');
+    let settled = false;
+
+    const cleanup = () => {
       delete (window as any)[cbName];
-      document.head.removeChild(s);
+      if (s.parentNode) s.parentNode.removeChild(s);
+    };
+
+    (window as any)[cbName] = (data: any) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
       resolve(data);
     };
-    const s = document.createElement('script');
-    s.src = CLOUD_URL + '?userId=' + userId + '&callback=' + cbName;
-    s.onerror = () => { delete (window as any)[cbName]; reject(new Error('Script load failed')); };
+
+    s.src = CLOUD_URL + '?userId=' + encodeURIComponent(userId) + '&callback=' + cbName;
+    s.onerror = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Script load failed for ' + userId));
+    };
     document.head.appendChild(s);
+
     setTimeout(() => {
-      if ((window as any)[cbName]) {
-        delete (window as any)[cbName];
-        reject(new Error('Timeout'));
-      }
-    }, 10000);
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error('Timeout for ' + userId));
+    }, 15000);
   });
 }
 
 export async function loadAllFromCloud(activeUserId: string | null): Promise<void> {
-  const userIds = getUserIds();
-  const targetIds = userIds.length ? userIds : ['50904'];
+  const targetIds = ['50904', '50906'];
   for (const uid of targetIds) {
     try {
       const json = await loadFromCloud(uid);
-      if (!json.ok) continue;
+      if (!json.ok) {
+        console.warn('Cloud returned not-ok for', uid, json);
+        continue;
+      }
       const d = json.data;
       const prefix = 'nhq_' + uid + '_';
       if (d.parent_done) { localStorage.setItem('nhq_parent_done', d.parent_done); }
