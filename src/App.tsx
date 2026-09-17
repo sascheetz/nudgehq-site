@@ -39,6 +39,8 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
   const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const demoModeRef = useRef(false);
 
   useEffect(() => {
     const handler = () => {
@@ -83,10 +85,14 @@ export default function App() {
     readQRParams();
     const hasExtData = localStorage.getItem('nhq_upcoming_raw') || localStorage.getItem('nhq_missing_raw');
     if (hasExtData) {
-      setTimeout(() => doLoadFromExtension(), 300);
+      autoLoadTimerRef.current = setTimeout(() => {
+        if (!demoModeRef.current) doLoadFromExtension();
+      }, 300);
     }
     // Listen for bridge data
-    const bridgeHandler = () => setTimeout(() => doLoadFromExtension(), 100);
+    const bridgeHandler = () => setTimeout(() => {
+      if (!demoModeRef.current) doLoadFromExtension();
+    }, 100);
     window.addEventListener('nhq_data_ready', bridgeHandler);
     return () => window.removeEventListener('nhq_data_ready', bridgeHandler);
   }, [doLoadFromExtension]);
@@ -114,6 +120,8 @@ export default function App() {
   };
 
   const loadDemo = () => {
+    demoModeRef.current = true;
+    if (autoLoadTimerRef.current) { clearTimeout(autoLoadTimerRef.current); autoLoadTimerRef.current = null; }
     const demoAssignments: Assignment[] = [
       { id: 'd1', title: 'Civil War Causes — DBQ Essay', course: '7th Grade Social Studies', due: off(-12, 23, 59), status: 'zeroed', points: 50, grade: '0', source: 'api' },
       { id: 'd2', title: 'Cells & Organelles Diagram', course: '7th Grade Life Science', due: off(-8, 23, 59), status: 'zeroed', points: 30, grade: '0', source: 'api' },
