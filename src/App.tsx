@@ -51,12 +51,12 @@ export default function App() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  const doLoadFromExtension = useCallback((userId?: string) => {
+  const doLoadFromExtension = useCallback((userId?: string, opts?: { silent?: boolean }) => {
     const ids = getUserIds();
     const PARENT_ID = '51186';
     const filteredIds = ids.filter(id => id !== PARENT_ID);
     if (!filteredIds.length) {
-      showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
+      if (!opts?.silent) showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
       return;
     }
     const uid = userId || filteredIds[0];
@@ -71,6 +71,8 @@ export default function App() {
 
     setParentDone(JSON.parse(localStorage.getItem('nhq_parent_done') || '{}'));
     setParentNotes(JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}'));
+    setActiveCourseFilter(null);
+    setActiveFilter('all');
 
     // Load HAC
     const hac = loadHACZeros();
@@ -80,7 +82,7 @@ export default function App() {
     // Load completed subs
     setCompletedSubs(loadCompletedSubs(uid));
 
-    showToast(`Loaded ${result.assignments.length} assignments for ${result.studentName} ✓`, 'ok');
+    if (!opts?.silent) showToast(`Loaded ${result.assignments.length} assignments for ${result.studentName} ✓`, 'ok');
   }, []);
 
   // Auto-load on mount
@@ -102,13 +104,19 @@ export default function App() {
 
   const handleLoadAllFromCloud = async () => {
     showToast('Loading from cloud...', '');
-    await loadAllFromCloud(activeUserId);
-    const ids = getUserIds();
-    const uid = activeUserId && activeUserId !== 'demo' ? activeUserId : (ids[0] || '50904');
-    setActiveCourseFilter(null);
-    setActiveFilter('all');
-    doLoadFromExtension(uid);
-    showToast('Loaded all data from cloud ✓', 'ok');
+    setLoading(true);
+    try {
+      await loadAllFromCloud(activeUserId);
+      const ids = getUserIds();
+      const uid = activeUserId && activeUserId !== 'demo' ? activeUserId : (ids[0] || '50904');
+      doLoadFromExtension(uid, { silent: true });
+      showToast('Loaded all data from cloud ✓', 'ok');
+    } catch (e) {
+      console.error('Cloud load error:', e);
+      showToast('Cloud load failed. Check your connection and try again.', 'err');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLoadHAC = () => {
