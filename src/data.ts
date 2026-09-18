@@ -1,7 +1,7 @@
 import type { Assignment, CompletedSub, HACZero, SubType } from './types';
 import { countdown } from './utils';
 
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzSj5NijFookplO-hX1t8WCFlWfgXA6FdJloxzVDje6uRZ3MYIYe4CeCxlOLqZ9NWJP/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbw6v68fS7sgeOvMMfPWLsm2cn_JYciqbE5mn_Ad1RGuuWxGdvGii-x7PGPnefaoqy_k/exec';
 const PARENT_ID = '51186';
 
 export function getUserIds(): string[] {
