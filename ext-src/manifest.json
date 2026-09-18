@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Nudge HQ",
+  "version": "2.3",
+  "description": "Syncs Canvas and HAC assignment data for Nudge HQ dashboard",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://lakota.instructure.com/*",
+    "https://hac.lakotainline.com/*",
+    "https://sascheetz.github.io/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://lakota.instructure.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://hac.lakotainline.com/*"],
+      "js": ["hac.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://sascheetz.github.io/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Nudge HQ"
+  }
+}

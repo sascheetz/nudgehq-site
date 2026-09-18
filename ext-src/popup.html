@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #ffffff;
+    color: #1a1d23;
+    width: 280px;
+    padding: 16px;
+  }
+  h1 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  h1 span { color: #5a67d8; }
+  .sub { font-size: 0.72rem; color: #9aa5b4; margin-bottom: 14px; }
+  .status-box {
+    background: #f8f9fa;
+    border: 1px solid #e2e6ea;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    font-size: 0.72rem;
+  }
+  .status-row { display: flex; justify-content: space-between; margin-bottom: 4px; color: #4a5568; }
+  .status-row span:last-child { color: #1a1d23; font-weight: 500; }
+  .synced-at { font-size: 0.68rem; color: #9aa5b4; margin-top: 6px; }
+  .btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: opacity 0.15s;
+  }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn-primary   { background: #1a1d23; color: #ffffff; }
+  .btn-secondary { background: #ffffff; color: #1a1d23; border: 1px solid #e2e6ea; }
+  .btn-blue      { background: #5a67d8; color: #ffffff; }
+  .btn-green     { background: #38a169; color: #ffffff; }
+  .not-on-canvas {
+    background: #fff8f0;
+    border: 1px solid #f6ad55;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.72rem;
+    color: #744210;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
+  .dot-green { background: #38a169; }
+  .dot-red   { background: #e53e3e; }
+  .dot-grey  { background: #9aa5b4; }
+  .divider { border: none; border-top: 1px solid #e2e6ea; margin: 8px 0; }
+  .dash-label { font-size: 0.68rem; color: #9aa5b4; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+<h1>Nudge <span>HQ</span></h1>
+<p class="sub">Canvas Assignment Sync</p>
+
+<div id="not-on-canvas" class="not-on-canvas" style="display:none">
+  ⚠️ Open Canvas and log in first, then click sync.
+</div>
+
+<div id="status-box" class="status-box">
+  <div class="status-row"><span><span class="dot dot-grey" id="status-dot"></span>Status</span><span id="status-text">Checking…</span></div>
+  <div class="status-row"><span>Upcoming</span><span id="upcoming-count">—</span></div>
+  <div class="status-row"><span>Missing</span><span id="missing-count">—</span></div>
+  <div class="synced-at" id="synced-at">Never synced</div>
+</div>
+
+<button class="btn btn-primary" id="sync-btn">🔄 Sync Now</button>
+
+<hr class="divider">
+<div class="dash-label">Open Dashboard</div>
+<button class="btn btn-blue" id="open-parent">📊 Parent Dashboard</button>
+<button class="btn btn-green" id="open-student">📚 Student Dashboard</button>
+
+<script src="popup.js"></script>
+</body>
+</html>
