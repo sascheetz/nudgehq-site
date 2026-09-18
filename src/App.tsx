@@ -56,12 +56,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const dispatchToken = (session: { access_token?: string } | null) => {
+      if (session?.access_token) {
+        window.dispatchEvent(new CustomEvent('nhq_token_ready', {
+          detail: { token: session.access_token },
+        }));
+      }
+    };
+
     supabase.auth.getSession().then(({ data }) => {
       setAuthed(!!data.session);
       setAuthChecking(false);
+      dispatchToken(data.session);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthed(!!session);
+      dispatchToken(session);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
