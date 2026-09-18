@@ -1,7 +1,11 @@
 import type { Assignment, CompletedSub, HACZero, SubType } from './types';
 import { countdown } from './utils';
 
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbw6v68fS7sgeOvMMfPWLsm2cn_JYciqbE5mn_Ad1RGuuWxGdvGii-x7PGPnefaoqy_k/exec';
+const SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync`;
+const SYNC_HEADERS = {
+  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+};
 const PARENT_ID = '51186';
 
 export function getUserIds(): string[] {
@@ -163,54 +167,19 @@ export function getCourseMap(userId: string): Record<string, string> {
   return JSON.parse(localStorage.getItem('nhq_' + userId + '_course_map') || '{}');
 }
 
-// Cloud sync via JSONP
-let _cbCounter = 0;
-
-export function loadFromCloud(userId: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    _cbCounter++;
-    const cbName = 'nhq_cb_' + Date.now() + '_' + _cbCounter;
-    const s = document.createElement('script');
-    let settled = false;
-
-    const cleanup = () => {
-      delete (window as any)[cbName];
-      if (s.parentNode) s.parentNode.removeChild(s);
-    };
-
-    (window as any)[cbName] = (data: any) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(data);
-    };
-
-    s.src = CLOUD_URL + '?userId=' + encodeURIComponent(userId) + '&callback=' + cbName;
-    s.onerror = () => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error('Script load failed for ' + userId));
-    };
-    document.head.appendChild(s);
-
-    setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error('Timeout for ' + userId));
-    }, 15000);
-  });
-}
-
 export async function loadAllFromCloud(activeUserId: string | null): Promise<void> {
   const targetIds = ['50904', '50906'];
   const successfulIds: string[] = [];
   for (const uid of targetIds) {
     try {
-      const json = await loadFromCloud(uid);
+      const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent(uid)}`, { headers: SYNC_HEADERS });
+      if (!res.ok) {
+        console.warn('Sync GET failed for', uid, res.status);
+        continue;
+      }
+      const json = await res.json();
       if (!json.ok) {
-        console.warn('Cloud returned not-ok for', uid, json);
+        console.warn('Sync returned not-ok for', uid);
         continue;
       }
       const d = json.data;
@@ -243,12 +212,10 @@ export function scheduleCloudPush(activeUserId: string | null) {
 async function pushToCloud(activeUserId: string | null) {
   const userId = activeUserId || '50904';
   const prefix = 'nhq_' + userId + '_';
-  const parentDone = JSON.parse(localStorage.getItem('nhq_parent_done') || '{}');
-  const parentNotes = JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}');
   try {
-    await fetch(CLOUD_URL, {
+    await fetch(SYNC_URL, {
       method: 'POST',
-      mode: 'no-cors',
+      headers: SYNC_HEADERS,
       body: JSON.stringify({
         userId,
         upcoming_raw: localStorage.getItem(prefix + 'upcoming_raw') || '[]',
@@ -256,11 +223,9 @@ async function pushToCloud(activeUserId: string | null) {
         zeros_raw: localStorage.getItem(prefix + 'zeros_raw') || '[]',
         course_map: localStorage.getItem(prefix + 'course_map') || '{}',
         submitted_ids: localStorage.getItem(prefix + 'submitted_ids') || '[]',
-        marked_done_ids: localStorage.getItem(prefix + 'marked_done_ids') || '[]',
+        completed_subs: localStorage.getItem(prefix + 'completed_subs') || '[]',
         synced_at: localStorage.getItem(prefix + 'synced_at') || '',
         name: localStorage.getItem(prefix + 'name') || '',
-        parent_done: JSON.stringify(parentDone),
-        parent_notes: JSON.stringify(parentNotes),
       }),
     });
   } catch (e) {
