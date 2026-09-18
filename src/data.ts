@@ -1,11 +1,16 @@
 import type { Assignment, CompletedSub, HACZero, SubType } from './types';
 import { countdown } from './utils';
+import { getSessionToken } from './supabaseClient';
 
 const SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync`;
-const SYNC_HEADERS = {
-  'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-};
+
+async function syncHeaders(): Promise<Record<string, string>> {
+  const token = await getSessionToken();
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
 const PARENT_ID = '51186';
 
 export function getUserIds(): string[] {
@@ -172,7 +177,7 @@ export async function loadAllFromCloud(activeUserId: string | null): Promise<voi
   const successfulIds: string[] = [];
   for (const uid of targetIds) {
     try {
-      const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent(uid)}`, { headers: SYNC_HEADERS });
+      const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent(uid)}`, { headers: await syncHeaders() });
       if (!res.ok) {
         console.warn('Sync GET failed for', uid, res.status);
         continue;
@@ -215,7 +220,7 @@ async function pushToCloud(activeUserId: string | null) {
   try {
     await fetch(SYNC_URL, {
       method: 'POST',
-      headers: SYNC_HEADERS,
+      headers: await syncHeaders(),
       body: JSON.stringify({
         userId,
         upcoming_raw: localStorage.getItem(prefix + 'upcoming_raw') || '[]',

@@ -8,6 +8,8 @@ import { HACTab } from './components/HACTab';
 import { CompletedTab } from './components/CompletedTab';
 import { SettingsDrawer } from './components/SettingsDrawer';
 import { Toast, showToast } from './components/Toast';
+import { AuthScreen } from './components/AuthScreen';
+import { supabase } from './supabaseClient';
 
 function off(d: number, h: number, m: number): Date {
   const x = new Date();
@@ -17,6 +19,8 @@ function off(d: number, h: number, m: number): Date {
 }
 
 export default function App() {
+  const [authed, setAuthed] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [activeUserId, setActiveUserId] = useState<string | null>(null);
   const [userIds, setUserIds] = useState<string[]>([]);
@@ -50,6 +54,21 @@ export default function App() {
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthed(!!data.session);
+      setAuthChecking(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   const doLoadFromExtension = useCallback((userId?: string, opts?: { silent?: boolean }) => {
     const ids = getUserIds();
@@ -299,6 +318,18 @@ export default function App() {
     transition: 'all 0.15s', marginBottom: '-1px',
   });
 
+  if (authChecking) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecf5 100%)' }}>
+        <span style={{ color: 'var(--muted)', fontSize: '0.95rem', letterSpacing: '0.12em' }}>Loading…</span>
+      </div>
+    );
+  }
+
+  if (!authed) {
+    return <AuthScreen onAuthed={() => setAuthed(true)} />;
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       {/* Mobile header */}
@@ -348,6 +379,7 @@ export default function App() {
                 onSendGeneralReminder={sendGeneralReminder}
                 onLoadDemo={() => { loadDemo(); setSidebarOpen(false); }}
                 onOpenSettings={() => { setSettingsOpen(true); setSidebarOpen(false); }}
+                onSignOut={handleSignOut}
               />
             </div>
           </>
@@ -368,6 +400,7 @@ export default function App() {
             onSendGeneralReminder={sendGeneralReminder}
             onLoadDemo={loadDemo}
             onOpenSettings={() => setSettingsOpen(true)}
+            onSignOut={handleSignOut}
           />
         </div>
       )}

@@ -15,6 +15,7 @@ interface Props {
   onSendGeneralReminder: () => void;
   onLoadDemo: () => void;
   onOpenSettings: () => void;
+  onSignOut: () => void;
 }
 
 export function Sidebar(props: Props) {
@@ -122,6 +123,13 @@ export function Sidebar(props: Props) {
       <div className="s-section">
         <div style={{ fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.16em', color: 'var(--muted)', marginBottom: '9px' }}>Phone Setup</div>
         <button onClick={() => props.onOpenSettings()} style={{ ...btnBase, background: 'var(--accent)', color: '#fff' }}>⚙️ Settings & QR Setup</button>
+      </div>
+
+      {/* Sign out */}
+      <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+        <button onClick={props.onSignOut} style={{ ...btnBase, background: 'none', color: 'var(--muted)', border: '1px solid var(--border)', fontSize: '0.82rem' }}>
+          Sign Out
+        </button>
       </div>
     </aside>
   );
