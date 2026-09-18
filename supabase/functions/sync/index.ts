@@ -36,7 +36,8 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+        console.error("sync GET failed:", error);
+        return new Response(JSON.stringify({ error: "Request failed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -103,7 +104,8 @@ Deno.serve(async (req: Request) => {
         });
 
       if (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+        console.error("sync POST failed:", error);
+        return new Response(JSON.stringify({ error: "Request failed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -119,7 +121,8 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error("sync unhandled error:", err);
+    return new Response(JSON.stringify({ error: "Request failed" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
