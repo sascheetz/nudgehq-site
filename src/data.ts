@@ -205,6 +205,7 @@ export function loadFromCloud(userId: string): Promise<any> {
 
 export async function loadAllFromCloud(activeUserId: string | null): Promise<void> {
   const targetIds = ['50904', '50906'];
+  const successfulIds: string[] = [];
   for (const uid of targetIds) {
     try {
       const json = await loadFromCloud(uid);
@@ -214,34 +215,21 @@ export async function loadAllFromCloud(activeUserId: string | null): Promise<voi
       }
       const d = json.data;
       const prefix = 'nhq_' + uid + '_';
-      if (d.parent_done) { localStorage.setItem('nhq_parent_done', d.parent_done); }
-      if (d.parent_notes) { localStorage.setItem('nhq_parent_notes', d.parent_notes); }
       localStorage.setItem(prefix + 'upcoming_raw', d.upcoming_raw || '[]');
       localStorage.setItem(prefix + 'missing_raw', d.missing_raw || '[]');
       localStorage.setItem(prefix + 'zeros_raw', d.zeros_raw || '[]');
       localStorage.setItem(prefix + 'course_map', d.course_map || '{}');
       localStorage.setItem(prefix + 'submitted_ids', d.submitted_ids || '[]');
-      localStorage.setItem(prefix + 'marked_done_ids', d.marked_done_ids || '[]');
-      localStorage.setItem(prefix + 'synced_at', d.synced_at || '');
+      localStorage.setItem(prefix + 'completed_subs', d.completed_subs || '[]');
       localStorage.setItem(prefix + 'name', d.name || 'Student');
-      const existingIds = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
-      if (!existingIds.includes(uid)) {
-        existingIds.push(uid);
-        localStorage.setItem('nhq_user_ids', JSON.stringify(existingIds));
-      }
+      localStorage.setItem(prefix + 'synced_at', json.synced_at || '');
+      successfulIds.push(uid);
     } catch (e) {
       console.warn('Cloud load failed for', uid, e);
     }
   }
-  // Load HAC data
-  try {
-    const hacJson = await loadFromCloud('hac_50904');
-    if (hacJson.ok && hacJson.data?.hac_zeros) {
-      localStorage.setItem('nhq_hac_zeros', hacJson.data.hac_zeros);
-      localStorage.setItem('nhq_hac_synced_at', hacJson.data.synced_at || '');
-    }
-  } catch (e) {
-    console.warn('HAC cloud load failed', e);
+  if (successfulIds.length) {
+    localStorage.setItem('nhq_user_ids', JSON.stringify(successfulIds));
   }
 }
 
@@ -347,9 +335,4 @@ export function buildEncMsg(a: Assignment, name: string): string {
   const h = a.due ? (a.due.getTime() - new Date().getTime()) / 3600000 : 999;
   const urgNote = h <= 24 ? '⚠️ This one is due TODAY!' : h <= 48 ? 'Due tomorrow — don\'t forget!' : `Due ${countdown(a)}.`;
   return `${pick([`Hey ${name}! Just a heads up 💙`, `Quick reminder, ${name} 👋`])}\n\n📚 "${a.title}" (${a.course})\n${urgNote}\n\n${pick(["You've got this — one step at a time. ❤️", "We believe in you! ❤️"])}`;
-}
-
-export function buildAllMissingMsg(missing: Assignment[], name: string): string {
-  const list = missing.map(a => `• "${a.title}" (${a.course})`).join('\n');
-  return `${name}! Just checking in 💙 A few things are showing as officially missing in Canvas:\n\n${list}\n\nNo stress — you've totally got this. We're here if you need any help! ❤️`;
 }

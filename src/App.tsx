@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import type { Assignment, HACZero, CompletedSub, TabKey } from './types';
-import { loadFromExtension, loadHACZeros, loadCompletedSubs, getUserIds, getCourseMap, loadAllFromCloud, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg, buildAllMissingMsg } from './data';
+import { loadFromExtension, loadHACZeros, loadCompletedSubs, getUserIds, getCourseMap, loadAllFromCloud, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
 import { urgency, getDateLabel, pillLabel, pillClass } from './utils';
 import { Sidebar } from './components/Sidebar';
 import { AssignmentCard } from './components/AssignmentCard';
@@ -282,10 +282,6 @@ export default function App() {
     reorderedList.push(...practiceUpcoming);
   }
 
-  // Missing banner
-  const missingItems = assignments.filter(a =>
-    (a.status === 'missing' || a.status === 'zeroed') && !parentDone[a.id] && studentChecked[a.id] !== true
-  );
   const stuChecked = assignments.filter(a => studentChecked[a.id] === true && a.status !== 'missing');
 
   const syncDisplay = syncedAt ? 'Synced · ' + new Date(syncedAt).toLocaleTimeString() : 'Not yet synced';
@@ -418,41 +414,6 @@ export default function App() {
                 {courseOptions.map(c => <option key={c} value={c}>{c.split('-')[0].trim()}</option>)}
               </select>
             </div>
-
-            {/* Missing banner */}
-            {missingItems.length > 0 && (
-              <div style={{ background: '#fdf0fb', border: '1px solid #d9aee8', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <strong style={{ color: 'var(--missing)', fontSize: '0.9rem', display: 'block', marginBottom: '3px' }}>
-                    {missingItems.filter(a => a.status === 'zeroed').length > 0 && missingItems.filter(a => a.status === 'missing').length > 0
-                      ? `${missingItems.filter(a => a.status === 'zeroed').length} graded zero, ${missingItems.filter(a => a.status === 'missing').length} missing`
-                      : missingItems.filter(a => a.status === 'zeroed').length > 0
-                        ? `${missingItems.filter(a => a.status === 'zeroed').length} assignment${missingItems.filter(a => a.status === 'zeroed').length > 1 ? 's' : ''} graded as zero`
-                        : `⚠️ ${missingItems.filter(a => a.status === 'missing').length} assignment${missingItems.filter(a => a.status === 'missing').length > 1 ? 's are' : ' is'} officially missing`}
-                  </strong>
-                  <span style={{ fontSize: '0.92rem', color: 'var(--subink)', lineHeight: 1.55 }}>
-                    {missingItems.map(a => `"${a.title}"`).join(' · ')}
-                  </span>
-                </div>
-                <button
-                  onClick={async () => {
-                    const sid = restoreCredential('tw-sid');
-                    const token = restoreCredential('tw-token');
-                    const from = restoreCredential('tw-from');
-                    const to = restoreCredential('tw-to');
-                    if (!sid || !token || !from || !to) { showToast('Fill in Twilio credentials in Settings first.', 'err'); setSettingsOpen(true); return; }
-                    const miss = assignments.filter(a => a.status === 'missing');
-                    if (!miss.length) return;
-                    const name = restoreCredential('student-name') || 'Hey';
-                    const ok = await twilioSend(sid, token, from, to, buildAllMissingMsg(miss, name));
-                    showToast(ok ? `Sent combined text for ${miss.length} assignments!` : 'SMS failed.', ok ? 'ok' : 'err');
-                  }}
-                  style={{ background: 'var(--missing)', color: '#fff', border: 'none', borderRadius: '7px', padding: '9px 15px', fontFamily: 'inherit', fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-                >
-                  📲 Text all missing
-                </button>
-              </div>
-            )}
 
             {/* Student checked banner */}
             {stuChecked.length > 0 && (
