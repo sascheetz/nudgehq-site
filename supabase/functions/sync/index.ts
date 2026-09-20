@@ -1,3 +1,4 @@
+// Nudge HQ sync endpoint — public, no JWT verification required
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {

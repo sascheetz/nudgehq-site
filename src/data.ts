@@ -1,16 +1,11 @@
 import type { Assignment, CompletedSub, HACZero, SubType } from './types';
 import { countdown } from './utils';
-import { getSessionToken } from './supabaseClient';
 
 const SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync`;
 
-async function syncHeaders(): Promise<Record<string, string>> {
-  const token = await getSessionToken();
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
-}
+const syncHeaders: Record<string, string> = {
+  'Content-Type': 'application/json',
+};
 const PARENT_ID = '51186';
 
 export interface CloudData {
@@ -28,7 +23,7 @@ export interface CloudData {
 
 export async function fetchCloudAssignments(): Promise<CloudData> {
   const targetIds = ['50904', '50906'];
-  const headers = await syncHeaders();
+  const headers = syncHeaders;
 
   const results: { uid: string; json: any }[] = [];
   for (const uid of targetIds) {
@@ -314,7 +309,7 @@ export async function loadAllFromCloud(activeUserId: string | null): Promise<voi
   const successfulIds: string[] = [];
   for (const uid of targetIds) {
     try {
-      const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent(uid)}`, { headers: await syncHeaders() });
+      const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent(uid)}`, { headers: syncHeaders });
       if (!res.ok) {
         console.warn('Sync GET failed for', uid, res.status);
         continue;
@@ -357,7 +352,7 @@ async function pushToCloud(activeUserId: string | null) {
   try {
     await fetch(SYNC_URL, {
       method: 'POST',
-      headers: await syncHeaders(),
+      headers: syncHeaders,
       body: JSON.stringify({
         userId,
         upcoming_raw: localStorage.getItem(prefix + 'upcoming_raw') || '[]',
