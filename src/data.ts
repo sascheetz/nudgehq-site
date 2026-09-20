@@ -13,6 +13,143 @@ async function syncHeaders(): Promise<Record<string, string>> {
 }
 const PARENT_ID = '51186';
 
+export interface CloudData {
+  assignments: Assignment[];
+  studentChecked: Record<string, boolean>;
+  studentSubTypes: Record<string, SubType>;
+  completedSubs: CompletedSub[];
+  hacZeros: HACZero[];
+  hacSyncedAt: string;
+  syncedAt: string;
+  studentName: string;
+  courseMap: Record<string, string>;
+  userIds: string[];
+}
+
+export async function fetchCloudAssignments(): Promise<CloudData> {
+  const targetIds = ['50904', '50906'];
+  const headers = await syncHeaders();
+
+  const results: { uid: string; json: any }[] = [];
+  for (const uid of targetIds) {
+    try {
+      const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent(uid)}`, { headers });
+      if (!res.ok) { console.warn('Sync GET failed for', uid, res.status); continue; }
+      const json = await res.json();
+      if (!json.ok) { console.warn('Sync returned not-ok for', uid); continue; }
+      results.push({ uid, json });
+    } catch (e) {
+      console.warn('Cloud load failed for', uid, e);
+    }
+  }
+
+  if (!results.length) {
+    return {
+      assignments: [], studentChecked: {}, studentSubTypes: {}, completedSubs: [],
+      hacZeros: [], hacSyncedAt: '', syncedAt: '', studentName: 'Student',
+      courseMap: {}, userIds: targetIds,
+    };
+  }
+
+  const primary = results[0];
+  const d = primary.json.data;
+  const uid = primary.uid;
+
+  const upcomingRaw = JSON.parse(d.upcoming_raw || '[]');
+  const missingRaw = JSON.parse(d.missing_raw || '[]');
+  const zerosRaw = JSON.parse(d.zeros_raw || '[]');
+  const courseMap: Record<string, string> = JSON.parse(d.course_map || '{}');
+  const submittedIds = new Set<string>(JSON.parse(d.submitted_ids || '[]'));
+  const completedSubs: CompletedSub[] = JSON.parse(d.completed_subs || '[]');
+  const studentName = d.name || 'Student';
+  const syncedAt = primary.json.synced_at || '';
+
+  const parentDone: Record<string, boolean> = JSON.parse(localStorage.getItem('nhq_parent_done') || '{}');
+  const now = new Date();
+  const academicYearStart = new Date(now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1, 7, 1);
+  const thirtyAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const seen = new Set<string>();
+  const assignments: Assignment[] = [];
+
+  zerosRaw.forEach((a: any) => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({
+      id, title: a.title || 'Untitled', course: a.course || courseMap[String(a.course_id)] || '',
+      due: a.due ? new Date(a.due) : null, status: 'zeroed',
+      points: a.points || null, grade: a.grade, score: a.score, source: 'api',
+    });
+  });
+
+  missingRaw.forEach((a: any) => {
+    const id = String(a.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    assignments.push({
+      id, title: a.name || 'Untitled', course: courseMap[String(a.course_id)] || '',
+      due: a.due_at ? new Date(a.due_at) : null, status: 'missing',
+      points: a.points_possible || null, source: 'api',
+    });
+  });
+
+  upcomingRaw.filter((e: any) => e.type === 'Assignment' || e.assignment).forEach((e: any) => {
+    const a = e.assignment || e;
+    const id = String(a.id || e.id);
+    const bareId = id.replace(/^assignment_/, '');
+    if (seen.has(id) || submittedIds.has(id) || submittedIds.has(bareId)) return;
+    if (a.submission && a.submission.score !== null && a.submission.score !== undefined) return;
+    const due = a.due_at ? new Date(a.due_at) : (e.start_at ? new Date(e.start_at) : null);
+    if (!due || due < academicYearStart) return;
+    const title = a.name || a.title || e.title || '';
+    if (!title) return;
+    seen.add(id);
+    assignments.push({
+      id, title, course: courseMap[String(a.course_id || e.course_id)] || e.context_name || '',
+      due, status: 'upcoming', points: a.points_possible || null, source: 'api',
+    });
+  });
+
+  const titleDueSet = new Set<string>();
+  let deduped = assignments.filter(a => {
+    const key = a.title.trim().toLowerCase() + '|' + (a.due ? a.due.toDateString() : 'nodue');
+    if (titleDueSet.has(key)) return false;
+    titleDueSet.add(key);
+    return true;
+  });
+
+  deduped = deduped.filter(a => !parentDone[a.id]);
+  deduped = deduped.filter(a => {
+    if (a.status === 'missing') {
+      if (!a.due) return true;
+      const dueDate = a.due instanceof Date ? a.due : new Date(a.due);
+      if (dueDate < thirtyAgo) return false;
+    }
+    return true;
+  });
+
+  deduped.sort((a, b) => {
+    const order = { zeroed: 0, missing: 1, upcoming: 2 };
+    const ao = order[a.status] ?? 2;
+    const bo = order[b.status] ?? 2;
+    if (ao !== bo) return ao - bo;
+    return (a.due || new Date(9e15)).getTime() - (b.due || new Date(9e15)).getTime();
+  });
+
+  return {
+    assignments: deduped,
+    studentChecked: {},
+    studentSubTypes: {},
+    completedSubs,
+    hacZeros: [],
+    hacSyncedAt: '',
+    syncedAt,
+    studentName,
+    courseMap,
+    userIds: results.map(r => r.uid),
+  };
+}
+
 export function getUserIds(): string[] {
   const all = JSON.parse(localStorage.getItem('nhq_user_ids') || '[]');
   return all.filter((id: string) => id !== PARENT_ID);

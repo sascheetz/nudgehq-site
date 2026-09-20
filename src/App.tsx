@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import type { Assignment, HACZero, CompletedSub, TabKey } from './types';
-import { loadFromExtension, loadHACZeros, loadCompletedSubs, getUserIds, getCourseMap, loadAllFromCloud, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
+import { loadHACZeros, getCourseMap, fetchCloudAssignments, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
 import { urgency, getDateLabel, pillLabel, pillClass } from './utils';
 import { Sidebar } from './components/Sidebar';
 import { AssignmentCard } from './components/AssignmentCard';
@@ -43,7 +43,6 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth > 768 && window.innerWidth <= 1024);
   const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoModeRef = useRef(false);
 
   useEffect(() => {
@@ -80,72 +79,52 @@ export default function App() {
     await supabase.auth.signOut();
   };
 
-  const doLoadFromExtension = useCallback((userId?: string, opts?: { silent?: boolean }) => {
-    const ids = getUserIds();
-    const PARENT_ID = '51186';
-    const filteredIds = ids.filter(id => id !== PARENT_ID);
-    if (!filteredIds.length) {
-      if (!opts?.silent) showToast('No extension data found. Open Canvas and click Sync in the Nudge HQ extension.', 'err');
-      return;
-    }
-    const uid = userId || filteredIds[0];
-    setActiveUserId(uid);
-    setUserIds(filteredIds);
-    const result = loadFromExtension(uid);
-    setAssignments(result.assignments);
-    setStudentChecked(result.studentChecked);
-    setStudentSubTypes(result.studentSubTypes);
-    setSyncedAt(result.syncedAt);
-    setStudentName(result.studentName);
-
-    setParentDone(JSON.parse(localStorage.getItem('nhq_parent_done') || '{}'));
-    setParentNotes(JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}'));
-    setActiveCourseFilter(null);
-    setActiveFilter('all');
-
-    // Load HAC
-    const hac = loadHACZeros();
-    setHacZeros(hac.zeros);
-    setHacSyncedAt(hac.syncedAt);
-
-    // Load completed subs
-    setCompletedSubs(loadCompletedSubs(uid));
-
-    if (!opts?.silent) showToast(`Loaded ${result.assignments.length} assignments for ${result.studentName} ✓`, 'ok');
-  }, []);
-
-  // Auto-load on mount
-  useEffect(() => {
-    readQRParams();
-    const hasExtData = localStorage.getItem('nhq_upcoming_raw') || localStorage.getItem('nhq_missing_raw');
-    if (hasExtData) {
-      autoLoadTimerRef.current = setTimeout(() => {
-        if (!demoModeRef.current) doLoadFromExtension();
-      }, 300);
-    }
-    // Listen for bridge data
-    const bridgeHandler = () => setTimeout(() => {
-      if (!demoModeRef.current) doLoadFromExtension();
-    }, 100);
-    window.addEventListener('nhq_data_ready', bridgeHandler);
-    return () => window.removeEventListener('nhq_data_ready', bridgeHandler);
-  }, [doLoadFromExtension]);
-
-  const handleLoadAllFromCloud = async () => {
-    showToast('Loading from cloud...', '');
+  const loadFromCloud = useCallback(async (opts?: { silent?: boolean }) => {
     setLoading(true);
     try {
-      await loadAllFromCloud(activeUserId);
-      const ids = getUserIds();
-      const uid = activeUserId && activeUserId !== 'demo' ? activeUserId : (ids[0] || '50904');
-      doLoadFromExtension(uid, { silent: true });
-      showToast('Loaded all data from cloud ✓', 'ok');
+      const cloud = await fetchCloudAssignments();
+      setActiveUserId(cloud.userIds[0] || '50904');
+      setUserIds(cloud.userIds);
+      setAssignments(cloud.assignments);
+      setStudentChecked(cloud.studentChecked);
+      setStudentSubTypes(cloud.studentSubTypes);
+      setSyncedAt(cloud.syncedAt);
+      setStudentName(cloud.studentName);
+      setCompletedSubs(cloud.completedSubs);
+      setHacZeros(cloud.hacZeros);
+      setHacSyncedAt(cloud.hacSyncedAt);
+
+      setParentDone(JSON.parse(localStorage.getItem('nhq_parent_done') || '{}'));
+      setParentNotes(JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}'));
+      setActiveCourseFilter(null);
+      setActiveFilter('all');
+
+      if (!opts?.silent) {
+        if (cloud.assignments.length > 0) {
+          showToast(`Loaded ${cloud.assignments.length} assignments for ${cloud.studentName} ✓`, 'ok');
+        } else {
+          showToast('No cloud data yet. Open Canvas and sync from the Nudge HQ extension.', 'err');
+        }
+      }
     } catch (e) {
       console.error('Cloud load error:', e);
-      showToast('Cloud load failed. Check your connection and try again.', 'err');
+      if (!opts?.silent) showToast('Cloud load failed. Check your connection and try again.', 'err');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Auto-load from cloud on mount
+  useEffect(() => {
+    readQRParams();
+    if (!demoModeRef.current) {
+      loadFromCloud();
+    }
+  }, [loadFromCloud]);
+
+  const handleLoadAllFromCloud = async () => {
+    showToast('Loading from cloud...', '');
+    await loadFromCloud({ silent: true });
   };
 
   const handleLoadHAC = () => {
@@ -162,7 +141,6 @@ export default function App() {
 
   const loadDemo = () => {
     demoModeRef.current = true;
-    if (autoLoadTimerRef.current) { clearTimeout(autoLoadTimerRef.current); autoLoadTimerRef.current = null; }
     const demoAssignments: Assignment[] = [
       { id: 'd1', title: 'Civil War Causes — DBQ Essay', course: '7th Grade Social Studies', due: off(-12, 23, 59), status: 'zeroed', points: 50, grade: '0', source: 'api' },
       { id: 'd2', title: 'Cells & Organelles Diagram', course: '7th Grade Life Science', due: off(-8, 23, 59), status: 'zeroed', points: 30, grade: '0', source: 'api' },
@@ -382,8 +360,8 @@ export default function App() {
                 activeUserId={activeUserId}
                 studentName={studentName}
                 isMobile={true}
-                onSwitchChild={(id) => { doLoadFromExtension(id); setSidebarOpen(false); }}
-                onLoadFromExtension={() => { doLoadFromExtension(); setSidebarOpen(false); }}
+                onSwitchChild={(id) => { loadFromCloud(); setSidebarOpen(false); }}
+                onLoadFromExtension={() => { loadFromCloud(); setSidebarOpen(false); }}
                 onLoadAllFromCloud={() => { handleLoadAllFromCloud(); setSidebarOpen(false); }}
                 onLoadHAC={() => { handleLoadHAC(); setSidebarOpen(false); }}
                 onSendGeneralReminder={sendGeneralReminder}
@@ -403,8 +381,8 @@ export default function App() {
             activeUserId={activeUserId}
             studentName={studentName}
             isMobile={false}
-            onSwitchChild={(id) => doLoadFromExtension(id)}
-            onLoadFromExtension={() => doLoadFromExtension()}
+            onSwitchChild={(id) => loadFromCloud()}
+            onLoadFromExtension={() => loadFromCloud()}
             onLoadAllFromCloud={handleLoadAllFromCloud}
             onLoadHAC={handleLoadHAC}
             onSendGeneralReminder={sendGeneralReminder}
