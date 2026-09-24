@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import type { Assignment, HACZero, CompletedSub, TabKey } from './types';
-import { loadHACZeros, getCourseMap, fetchCloudAssignments, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
+import { loadHACZeros, fetchCloudAssignments, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
 import { urgency, getDateLabel, pillLabel, pillClass } from './utils';
 import { Sidebar } from './components/Sidebar';
 import { AssignmentCard } from './components/AssignmentCard';
@@ -38,6 +38,7 @@ export default function App() {
   const [hacZeros, setHacZeros] = useState<HACZero[]>([]);
   const [hacSyncedAt, setHacSyncedAt] = useState('');
   const [completedSubs, setCompletedSubs] = useState<CompletedSub[]>([]);
+  const [cloudCourseMap, setCloudCourseMap] = useState<Record<string, string>>({});
   const [nudgeSentIds, setNudgeSentIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -93,6 +94,7 @@ export default function App() {
       setCompletedSubs(cloud.completedSubs);
       setHacZeros(cloud.hacZeros);
       setHacSyncedAt(cloud.hacSyncedAt);
+      setCloudCourseMap(cloud.courseMap);
 
       setParentDone(JSON.parse(localStorage.getItem('nhq_parent_done') || '{}'));
       setParentNotes(JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}'));
@@ -272,8 +274,7 @@ export default function App() {
   });
 
   // Course filter options
-  const courseMap = activeUserId ? getCourseMap(activeUserId) : {};
-  const allCourseNames = Object.values(courseMap).filter(Boolean).sort();
+  const allCourseNames = Object.values(cloudCourseMap).filter(Boolean).sort();
   const assignmentCourses = new Set(assignments.filter(a => !parentDone[a.id]).map(a => a.course).filter(Boolean));
   const courseOptions = allCourseNames.length ? allCourseNames : [...assignmentCourses].sort();
 

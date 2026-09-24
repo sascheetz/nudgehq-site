@@ -38,17 +38,35 @@ export async function fetchCloudAssignments(): Promise<CloudData> {
     }
   }
 
+  // Fetch HAC data for the primary student
+  let hacZeros: HACZero[] = [];
+  let hacSyncedAt = '';
+  if (results.length) {
+    const primaryUid = results[0].uid;
+    try {
+      const hacRes = await fetch(`${SYNC_URL}?userId=${encodeURIComponent('hac_' + primaryUid)}`, { headers });
+      if (hacRes.ok) {
+        const hacJson = await hacRes.json();
+        if (hacJson.ok && hacJson.data) {
+          hacZeros = JSON.parse(hacJson.data.zeros_raw || '[]');
+          hacSyncedAt = hacJson.synced_at || '';
+        }
+      }
+    } catch (e) {
+      console.warn('HAC cloud load failed:', e);
+    }
+  }
+
   if (!results.length) {
     return {
       assignments: [], studentChecked: {}, studentSubTypes: {}, completedSubs: [],
-      hacZeros: [], hacSyncedAt: '', syncedAt: '', studentName: 'Student',
+      hacZeros, hacSyncedAt, syncedAt: '', studentName: 'Student',
       courseMap: {}, userIds: targetIds,
     };
   }
 
   const primary = results[0];
   const d = primary.json.data;
-  const uid = primary.uid;
 
   const upcomingRaw = JSON.parse(d.upcoming_raw || '[]');
   const missingRaw = JSON.parse(d.missing_raw || '[]');
@@ -82,13 +100,13 @@ export async function fetchCloudAssignments(): Promise<CloudData> {
     if (seen.has(id)) return;
     seen.add(id);
     assignments.push({
-      id, title: a.name || 'Untitled', course: courseMap[String(a.course_id)] || '',
+      id, title: a.name || a.title || 'Untitled', course: courseMap[String(a.course_id)] || '',
       due: a.due_at ? new Date(a.due_at) : null, status: 'missing',
       points: a.points_possible || null, source: 'api',
     });
   });
 
-  upcomingRaw.filter((e: any) => e.type === 'Assignment' || e.assignment).forEach((e: any) => {
+  upcomingRaw.forEach((e: any) => {
     const a = e.assignment || e;
     const id = String(a.id || e.id);
     const bareId = id.replace(/^assignment_/, '');
@@ -100,8 +118,8 @@ export async function fetchCloudAssignments(): Promise<CloudData> {
     if (!title) return;
     seen.add(id);
     assignments.push({
-      id, title, course: courseMap[String(a.course_id || e.course_id)] || e.context_name || '',
-      due, status: 'upcoming', points: a.points_possible || null, source: 'api',
+      id, title, course: e.course || courseMap[String(a.course_id || e.course_id)] || e.context_name || '',
+      due, status: 'upcoming', points: a.points_possible || a.points || e.points || null, source: 'api',
     });
   });
 
@@ -136,8 +154,8 @@ export async function fetchCloudAssignments(): Promise<CloudData> {
     studentChecked: {},
     studentSubTypes: {},
     completedSubs,
-    hacZeros: [],
-    hacSyncedAt: '',
+    hacZeros,
+    hacSyncedAt,
     syncedAt,
     studentName,
     courseMap,
