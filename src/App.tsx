@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import type { Assignment, HACZero, CompletedSub, TabKey } from './types';
-import { loadHACZeros, fetchCloudAssignments, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
+import { loadHACZeros, fetchHACZeros, fetchCloudAssignments, scheduleCloudPush, restoreCredential, readQRParams, twilioSend, buildMissingMsg, buildEncMsg } from './data';
 import { urgency, getDateLabel, pillLabel, pillClass } from './utils';
 import { Sidebar } from './components/Sidebar';
 import { AssignmentCard } from './components/AssignmentCard';
@@ -92,14 +92,18 @@ export default function App() {
       setSyncedAt(cloud.syncedAt);
       setStudentName(cloud.studentName);
       setCompletedSubs(cloud.completedSubs);
-      setHacZeros(cloud.hacZeros);
-      setHacSyncedAt(cloud.hacSyncedAt);
       setCloudCourseMap(cloud.courseMap);
 
       setParentDone(JSON.parse(localStorage.getItem('nhq_parent_done') || '{}'));
       setParentNotes(JSON.parse(localStorage.getItem('nhq_parent_notes') || '{}'));
       setActiveCourseFilter(null);
       setActiveFilter('all');
+
+      // Fetch HAC data separately so it doesn't block assignment cards
+      fetchHACZeros(cloud.userIds[0] || '50904').then(hac => {
+        setHacZeros(hac.zeros);
+        setHacSyncedAt(hac.syncedAt);
+      });
 
       if (!opts?.silent) {
         if (cloud.assignments.length > 0) {

@@ -13,12 +13,24 @@ export interface CloudData {
   studentChecked: Record<string, boolean>;
   studentSubTypes: Record<string, SubType>;
   completedSubs: CompletedSub[];
-  hacZeros: HACZero[];
-  hacSyncedAt: string;
   syncedAt: string;
   studentName: string;
   courseMap: Record<string, string>;
   userIds: string[];
+}
+
+export async function fetchHACZeros(userId: string): Promise<{ zeros: HACZero[]; syncedAt: string }> {
+  try {
+    const res = await fetch(`${SYNC_URL}?userId=${encodeURIComponent('hac_' + userId)}`, { headers: syncHeaders });
+    if (!res.ok) return { zeros: [], syncedAt: '' };
+    const json = await res.json();
+    if (!json.ok || !json.data) return { zeros: [], syncedAt: '' };
+    const zeros: HACZero[] = JSON.parse(json.data.hac_zeros || json.data.zeros_raw || '[]');
+    return { zeros, syncedAt: json.synced_at || '' };
+  } catch (e) {
+    console.warn('HAC cloud load failed:', e);
+    return { zeros: [], syncedAt: '' };
+  }
 }
 
 export async function fetchCloudAssignments(): Promise<CloudData> {
@@ -38,29 +50,10 @@ export async function fetchCloudAssignments(): Promise<CloudData> {
     }
   }
 
-  // Fetch HAC data for the primary student
-  let hacZeros: HACZero[] = [];
-  let hacSyncedAt = '';
-  if (results.length) {
-    const primaryUid = results[0].uid;
-    try {
-      const hacRes = await fetch(`${SYNC_URL}?userId=${encodeURIComponent('hac_' + primaryUid)}`, { headers });
-      if (hacRes.ok) {
-        const hacJson = await hacRes.json();
-        if (hacJson.ok && hacJson.data) {
-          hacZeros = JSON.parse(hacJson.data.zeros_raw || '[]');
-          hacSyncedAt = hacJson.synced_at || '';
-        }
-      }
-    } catch (e) {
-      console.warn('HAC cloud load failed:', e);
-    }
-  }
-
   if (!results.length) {
     return {
       assignments: [], studentChecked: {}, studentSubTypes: {}, completedSubs: [],
-      hacZeros, hacSyncedAt, syncedAt: '', studentName: 'Student',
+      syncedAt: '', studentName: 'Student',
       courseMap: {}, userIds: targetIds,
     };
   }
@@ -154,8 +147,6 @@ export async function fetchCloudAssignments(): Promise<CloudData> {
     studentChecked: {},
     studentSubTypes: {},
     completedSubs,
-    hacZeros,
-    hacSyncedAt,
     syncedAt,
     studentName,
     courseMap,

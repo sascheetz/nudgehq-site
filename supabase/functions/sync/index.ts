@@ -56,6 +56,7 @@ Deno.serve(async (req: Request) => {
           upcoming_raw: data.upcoming_raw,
           missing_raw: data.missing_raw,
           zeros_raw: data.zeros_raw,
+          hac_zeros: data.zeros_raw,
           course_map: data.course_map,
           submitted_ids: data.submitted_ids,
           completed_subs: data.completed_subs,
