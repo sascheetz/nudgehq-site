@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nudge HQ — Privacy Policy</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #2d3748; line-height: 1.7; }
+  h1 { color: #1a202c; }
+  h2 { color: #2d3748; margin-top: 32px; }
+  p { margin: 12px 0; }
+  a { color: #5a67d8; }
+</style>
+</head>
+<body>
+<h1>Nudge HQ — Privacy Policy</h1>
+<p><strong>Last updated:</strong> September 25, 2026</p>
+
+<p>Nudge HQ ("the Extension") is a Chrome extension designed to help parents monitor their child's Canvas LMS assignment data. This policy explains what data is collected, how it is used, and how it is stored.</p>
+
+<h2>1. Data Collected</h2>
+<p>The Extension collects the following data when you use it on your child's Canvas LMS account:</p>
+<ul>
+  <li>Student name and Canvas user ID</li>
+  <li>Course names and IDs</li>
+  <li>Assignment names, due dates, submission status, and scores</li>
+  <li>Missing assignment information</li>
+  <li>Submission types</li>
+</ul>
+<p>The Extension also reads data from Home Access Center (HAC) when the user activates the Capture feature, including assignment names, scores, and grade percentages.</p>
+
+<h2>2. How Data Is Used</h2>
+<p>All collected data is used solely to display assignment information in the Nudge HQ parent dashboard. The data is used to:</p>
+<ul>
+  <li>Show upcoming, missing, and completed assignments</li>
+  <li>Display at-a-glance stats for parents</li>
+  <li>Enable cross-device access via cloud sync</li>
+  <li>Send SMS reminders to parents via Twilio (only when manually triggered by the user)</li>
+</ul>
+
+<h2>3. Data Storage</h2>
+<p>Data is stored in two locations:</p>
+<ul>
+  <li><strong>Locally:</strong> In Chrome's local extension storage (<code>chrome.storage.local</code>) on the user's device</li>
+  <li><strong>Cloud:</strong> On Supabase (supabase.co), a third-party database service, when the user enables cloud sync. Data is stored per student ID and is only accessible by the account holder.</li>
+</ul>
+
+<h2>4. Data Sharing</h2>
+<p>Data is shared with the following third parties solely to provide the Extension's functionality:</p>
+<ul>
+  <li><strong>Supabase (supabase.co):</strong> Cloud database storage for cross-device sync</li>
+  <li><strong>Twilio:</strong> SMS delivery when the user manually triggers a reminder. Only the student's name and assignment information are included in SMS messages.</li>
+</ul>
+<p>We do not sell, rent, or share user data with any other third parties. Data is never used for advertising or marketing purposes.</p>
+
+<h2>5. Data Retention</h2>
+<p>Data stored in Supabase is retained until the user deletes it or stops using the Extension. Local Chrome storage data is cleared when the Extension is uninstalled.</p>
+
+<h2>6. User Control</h2>
+<p>Users can clear all stored data at any time by uninstalling the Extension, which removes all local storage data. Cloud data can be deleted by contacting the developer.</p>
+
+<h2>7. Children's Privacy</h2>
+<p>The Extension is designed for use by parents to monitor their own child's academic data. All data collected belongs to the parent/guardian who installed the Extension and is used solely for that purpose.</p>
+
+<h2>8. Contact</h2>
+<p>For questions about this privacy policy or to request data deletion, please contact the developer through the Chrome Web Store listing.</p>
+
+</body>
+</html>
