@@ -25,9 +25,10 @@ export interface HACZero {
   dateDue: string;
   score: string;
   pct: string;
+  totalPts: string;
   isZero: boolean;
   isBlank: boolean;
-  canvasStatus: string;
+  canvasStatus?: string;
 }
 
 export interface CompletedSub {

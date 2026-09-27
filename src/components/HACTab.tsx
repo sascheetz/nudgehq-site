@@ -39,6 +39,7 @@ export function HACTab({ zeros, syncedAt }: Props) {
               {zeros.map((z, i) => {
                 const scoreColor = z.isZero ? '#c53030' : z.isBlank ? '#dd6b20' : '#c53030';
                 const cs = z.canvasStatus;
+                const scoreLabel = z.totalPts ? `${z.score}/${z.totalPts}` : z.score;
                 const canvasCell = cs === 'submitted' ? <span style={{ color: '#38a169', fontWeight: 600 }}>✓ Submitted</span> :
                   cs === 'missing' ? <span style={{ color: '#e53e3e', fontWeight: 600 }}>⚠️ Missing</span> :
                   cs === 'upcoming' ? <span style={{ color: '#dd6b20' }}>📅 Not submitted yet</span> :
@@ -49,7 +50,7 @@ export function HACTab({ zeros, syncedAt }: Props) {
                     <td style={{ ...tdStyle, maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.72rem', color: '#4a5568' }}>{z.course}</td>
                     <td style={{ ...tdStyle, fontWeight: 500, color: '#1a1d23' }}>{z.assignment}</td>
                     <td style={{ ...tdStyle, color: '#9aa5b4' }}>{z.dateDue || ''}</td>
-                    <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: scoreColor }}>{z.score}</td>
+                    <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: scoreColor }}>{scoreLabel}</td>
                     <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: scoreColor }}>{z.pct}</td>
                     <td style={{ ...tdStyle, fontSize: '0.78rem' }}>{canvasCell}</td>
                   </tr>
